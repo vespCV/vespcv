@@ -1,0 +1,20 @@
+__pycache__/ 
+*.pyc 
+*.pyo 
+*.pyd 
+__pypackages__/ 
+build/ 
+dist/ 
+ggs/ 
+.eggs/ 
+lib64/ 
+sdist/
+
+# Ignore finder files
+.DS_store
+Thumbs.db
+
+# Ignore folders
+.cursor/
+data/
+venv/
