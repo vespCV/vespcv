@@ -1,3 +1,4 @@
+# Python
 __pycache__/ 
 *.pyc 
 *.pyo 
@@ -15,6 +16,11 @@ sdist/
 Thumbs.db
 
 # Ignore folders
-.cursor/
 data/
 venv/
+
+# Cursor docs
+.cursor/
+PLANNING.md
+TASK.md
+
