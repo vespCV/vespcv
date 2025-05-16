@@ -38,6 +38,7 @@ Camera input → AI detection → storage/logging
 - User-friendly graphical interface (GUI) for monitoring and configuration
 - Ability to export detection data
 - Automation of application startup
+- Gracefull shutdown (GPIO pins and pushbutton)
 
 ## 3. User Stories
 
