@@ -20,6 +20,8 @@ This document explains the current structure of the vespCV project and where new
 
 - **src/**: The core application code
   - **core/**: Core detection logic (model loading, inference)
+    - **detector.py**: running inference on images and applying detection rules, returning results. Aligns with the PRD focus on hornet detection.
+    - **detection_utils.py**: prepare data for detection, such as capturing images from the camera or any other tasks that assists but is not core detection.
   - **gui/**: GUI components using Tkinter
   - **utils/**: Helper functions, image processing, logging
 
