@@ -30,6 +30,17 @@ def load_config(config_path='config/config.yaml'):
     return config
 
 if __name__ == "__main__":
-    config = load_config()
-    print(config)
+    config = load_config() # Load the config
+
+    # Test the config
+    model_path = config['model_path']
+    print(f"Model path: {model_path}")
+
+    images_folder = config['images_folder']
+    print(f"Images folder: {images_folder}")
     
+    conf_threshold = config['conf_threshold']
+    print(f"Confidence threshold: {conf_threshold}")
+
+    capture_interval = config['capture_interval']
+    print(f"Capture interval: {capture_interval}")
