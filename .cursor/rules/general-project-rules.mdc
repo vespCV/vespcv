@@ -73,7 +73,7 @@ alwaysApply: true
 ### Project Focus: vespCV - Asian Hornet Detector
 
 - **Objective**: Build a hornet detection system using a Raspberry Pi 4, Camera Module 3, and YOLOv11s.
-- **Requirements**: Must detect hornets efficiently in almost real-time (1 second delay is acceptable) under resource constraints.
+- **Requirements**: Must detect hornets with a 15 second interval under resource constraints.
 
 #### Resource Management
 Discuss strategies for optimizing memory and processing power, such as model quantization or using lightweight libraries.
