@@ -1,0 +1,28 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Structure
+
+The `vespCV` hornet detector is organized for modularity, testability, and deployment on a Raspberry Pi 4.
+
+Product Requirements Document: [prd.md](mdc:../doc/prd.md)
+
+Current file structure: [project-structure-documentation.mdc](mdc:.cursor/rules/project-structure-documentation.mdc)
+
+Tech-stack: [tech-stack.mdc](mdc:.cursor/rules/tech-stack.mdc)
+
+### Hardware Environment
+- Target device: **Raspberry Pi 4B (4GB RAM)**
+- **Camera Module 3** via OpenCV or PiCamera2
+- Runs in **headless** mode or with Raspberry Pi Connect
+- Designed for **edge-only operation** — no cloud dependencies
+
+### System Behavior
+- Auto-start on boot using `systemd` or cron
+- Graceful shutdown support (hardware or software)
+- Logs stored locally in `/data/logs/`
+- Monitor key system health indicators (CPU temp, RAM usage, uptime)
+
+
