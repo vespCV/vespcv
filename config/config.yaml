@@ -11,3 +11,6 @@ conf_thresh: 0.80
 # test lenspostition with:
 # libcamera-still -t 0 --autofocus-mode continuous --info-text "%lp"
 lensposition: 1
+
+# Interval in seconds between captures
+capture_interval: 15
