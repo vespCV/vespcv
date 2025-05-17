@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+### Audience
+All developer documentation must be written for non-experts in computer vision, python and edge detection on raspberry. Also explain `how` and `why` and not only `what`.
+All user documentation must be written for non-technical users — especially **beekeepers** with no prior knowledge of vespCV, Raspberry Pi, or computer vision.
+
+### Tone and Style
+- Friendly and clear — avoid jargon or acronyms unless explained in plain language.
+- Use short sentences, bullet points, and headings.
+- Prefer step-by-step instructions over abstract descriptions.
+- Include diagrams or images where helpful.
+
+### Documentation Types
+Cursor should help create and review the following documents:
+
+1. **Quick Start Guide**
+   - Step-by-step setup from unboxing to first detection
+   - Include hardware wiring, powering up, and viewing results
+2. **User Manual**
+   - Basic usage: how to know it's working, how to interpret results
+   - How to shut it down safely
+3. **System Overview**
+   - One-pager explaining how it works (camera, hornet model, detection, GPIO)
+   - Use analogies and simple visuals
+4. **Maintenance and Troubleshooting**
+   - Common problems (e.g. "nothing is showing on the screen")
+   - How to check logs, restart safely
+   - Delete files after a session
+1. **Glossary**
+   - Define terms like: YOLO, Raspberry Pi, detection, inference, etc.
+
+### Writing Approach
+- Documentation should be written **alongside development**, not after.
+- For each new feature or behavior, include or update a user-facing explanation.
+- When writing docs, always ask: *"Would a beekeeper with no tech background understand this?"*
+- - When writing docs, always ask: *"Would a contributer to the repository with little tech background understand this?"*
+
+### Format Guidelines
+- Use Markdown for all user-facing docs
+- One main README.md for GitHub repo (overview + links to guides)
+- Include printable PDF version of the Quick Start Guide
+- Keep screenshots or diagrams in a `/docs/images/` folder
