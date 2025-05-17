@@ -6,19 +6,7 @@ import os
 from detection_utils import capture_image
 
 def load_config(config_path='config/config.yaml'):
-    """Load the configuration from the specified YAML file.
-
-    Args:
-        config_path (str): The path to the configuration file.
-
-    Returns:
-        dict: The loaded configuration.
-
-    Raises:
-        FileNotFoundError: If the config file does not exist.
-        yaml.YAMLError: If there is an error parsing the YAML file.
-        KeyError: If 'model_path' key is missing in the configuration.
-    """
+    """Load the configuration from the specified YAML file."""
     try:
         with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
@@ -36,17 +24,7 @@ def load_config(config_path='config/config.yaml'):
 
 
 def create_model(model_path):
-    """Load the YOLO model from the given model path.
-
-    Args:
-        model_path (str): The path to the pre-trained YOLO model weights.
-
-    Returns:
-        YOLO: The loaded YOLO model.
-
-    Raises:
-        Exception: If there is a failure loading the model.
-    """
+    """Load the YOLO model from the given model path"""
     try:
         model = YOLO(model_path)
     except Exception as e:
@@ -57,38 +35,28 @@ def create_model(model_path):
 
 if __name__ == '__main__':
     try:
-        """
-        Load the config
-        """
         config = load_config()
     except Exception as e:
         print(f"Config error: {e}")
+        exit(1) # Exit if config error
 
     try:
-        """ 
-        Create the model 
-        """
         model = create_model(config['model_path'])
     except Exception as e:
         print(f"Model error: {e}")
+        exit(1) # Exit if model error
 
-    try:
-        """
-        Get the image folder
-        """
-        image_folder = config.get('images_folder')
-        image_path = os.path.join(image_folder, 'image_for_detection.jpg')
-    except Exception as e:
-        print(f"Image folder error: {e}")
-        
     while True:
         """
-        Capture an image, run inference, and save the results
+        Capture an image, run inference
         """
         try:
-            image_path = capture_image()
-            results = model(image_path)
-            print(results)
+            image_path = capture_image() # Capture the image
+            # Update the image path (in case in the future we want to save more images, so it gets the latest image)
+            image_folder = config.get('images_folder')
+            image_path = os.path.join(image_folder, 'image_for_detection.jpg')
+            results = model(image_path) # Run inference
+            print(results) #TEST HIER VERDER MET VERWERKEN VAN RESULTS
         except Exception as e:
             print(f"Error: {e}")
         time.sleep(config['capture_interval'])
