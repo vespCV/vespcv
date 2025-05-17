@@ -6,7 +6,7 @@ images_folder: "/home/vcv/vespcv/data/images"
 
 # Confidence threshold for detection
 # A higher threshold means the model is more confident about the detection
-conf_thresh: 0.80
+conf_threshold: 0.80
 
 # lens position 10: Close-up approximately10 c
 # lens position  1: Medium distance, approximately 1 meter
