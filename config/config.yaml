@@ -1,0 +1,13 @@
+# Location of the model weights
+model_path: "/home/vcv/vespcv/models/yolo112025-04-23_e200_p20_b-1_L4/weights/best.pt"
+
+# Confidence threshold for detection
+# A higher threshold means the model is more confident about the detection
+conf_thresh: 0.80
+
+# lens position 10: Close-up approximately10 c
+# lens position  1: Medium distance, approximately 1 meter
+# lens position  0: Far distance, approximately 3 meters
+# test lenspostition with:
+# libcamera-still -t 0 --autofocus-mode continuous --info-text "%lp"
+lensposition: 1
