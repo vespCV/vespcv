@@ -1,6 +1,9 @@
 from ultralytics import YOLO
 import yaml
+import time
+import os
 
+from detection_utils import capture_image
 
 def load_config(config_path='config/config.yaml'):
     """Load the configuration from the specified YAML file.
@@ -55,5 +58,12 @@ def create_model(model_path):
 if __name__ == '__main__':
     config = load_config()
     model = create_model(config['model_path'])
+    image_folder = config.get('images_folder')
+    image_path = os.path.join(image_folder, 'image_for_detection.jpg')
 
-
+    while True:
+        image_path = capture_image()
+        # Add inference here
+        results = model(image_path)
+        print(results)
+        time.sleep(config['capture_interval'])
