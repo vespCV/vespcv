@@ -1,0 +1,12 @@
+# vespCV - Asian Hornet Detector
+
+## Overview
+vespCV is an Asian hornet detection system designed to operate on a Raspberry Pi using YOLOv11s for detection of Asian hornets. The project provides an efficient solution for monitoring and controlling Asian hornet populations.
+
+## License
+Public License (GPL) Version 3
+This license allows users to freely use, modify, and distribute the software, provided that all copies and derivative works are also licensed under the same terms. For more details, please refer to the full license text.
+
+
+
+
