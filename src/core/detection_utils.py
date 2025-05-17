@@ -3,10 +3,8 @@ import os
 import time
 import subprocess
 
-from detector import load_config
+from config_loader import load_config
 
-# Define variables
-last_capture_time = time.time()  # Track the last capture time
 
 def capture_image():
     """Capture an image using libcamera-still and save it to the configured path.
