@@ -10,6 +10,12 @@ This document explains the current structure of the vespCV project and where new
 
 ## Directory Structure
 **vespCV/**: Project folder on the Raspberry Pi 4. Accessed via SSH using the Cursor IDE.
+- **legacy/**: old code from the proof of concept version and code to test stuff with yolov10.
+    - **detectAllConf.py**: This script continuously monitors for Asian hornets using a Raspberry Pi camera and YOLOv10 object detection model. It captures images at regular intervals and processes them for hornet detection. This funcion is the main task of the current vespCV project.
+    - **testCSIcamPi.py**: Input: CSI 16 MP sony IMX519 ArduCam. Output: image in folder images, if folder does not exist it creates this folder.
+    - **testIntervalCSIcamImagesLedPi2.py**: Uses GPIO pins to turn on LED if a hornet is detected.
+    - **testIntervalCSIcamImagesPi.py**
+    - **testSlideshowVideoPi.py**: Use a slideshow in .m4v as surrogate for the camera to test the model. Output is in images without boundingboxes, classes and conficence scores. Was used to test the model and saving of the images
 
 - **src/**: The core application code
   - **core/**: Core detection logic (model loading, inference)
