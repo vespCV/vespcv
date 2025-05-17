@@ -20,7 +20,7 @@ data/
 venv/
 
 # Cursor docs
-.cursor/
+# .cursor/
 .cursorignore
 PLANNING.md
 TASK.md
