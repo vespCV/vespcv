@@ -1,0 +1,44 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Structure Documentation
+
+## Overview
+This document explains the current structure of the vespCV project and where new additions should be placed.
+
+## Directory Structure
+**vespCV/**: Project folder on the Raspberry Pi 4. Accessed via SSH using the Cursor IDE.
+
+- **src/**: The core application code
+  - **core/**: Core detection logic (model loading, inference)
+  - **gui/**: GUI components using Tkinter
+  - **utils/**: Helper functions, image processing, logging
+
+- **config/**: YAML/JSON configuration files
+
+- **models/**: Trained model weights
+
+- **tests/**: Unit and integration tests (pytest-based)
+
+- **movies/**: Contains movies and sliders for test purposes
+
+- **doc/**: 
+  - **Purpose**: Holds project documentation, including the Product Requirements Document in `@prd.md`.
+  - **Placement**: Correct place for developer and user documentation.
+
+- **data/**:
+  - **images/**: Saved detection images
+  - **logs/**: CSV logs, system metrics
+
+## Additional Files
+- **PLANNING.md**: Contains project plan, goals, and deliverables.
+
+- **README.md**: 
+  - **Purpose**: First point of contact for anyone visiting this repository on GitHub.
+  - **Placement**: Includes project title, description, installation guide, contributing guidelines, roadmap, and acknowledgments (optional).
+
+- **requirements.txt**: Contains all Python libraries with version numbers used in the project.
+
+
