@@ -1,8 +1,5 @@
 import yaml
 import os
-import cv2
-import torch
-import numpy as np
 import time
 import subprocess
 
@@ -11,32 +8,33 @@ from detector import load_config
 # Define variables
 last_capture_time = time.time()  # Track the last capture time
 
-
-def load_config(config_path='config/config.yaml'):
-    """Load the configuration from the specified YAML file.
-
-    Args:
-        config_path (str): The path to the configuration file.
-
+def capture_image():
+    """Capture an image using libcamera-still and save it to the configured path.
+    
     Returns:
-        dict: The loaded configuration.
-
-    Raises:
-        FileNotFoundError: If the config file does not exist.
-        yaml.YAMLError: If there is an error parsing the YAML file. 
+        str: Path to the captured image
     """
     try:
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-    except FileNotFoundError as e:
-        print(f"Error: '{config_path}' file not found.")
+        config = load_config()  # Loads the config dict
+        images_folder = config.get('images_folder', '/default/path')  # Safely get the value, with a fallback
+        image_path = os.path.join(images_folder, 'image_for_detection.jpg')
+        print(f"Attempting to save image to: {image_path}")  # Debug print
+        subprocess.run([ 
+            "libcamera-still",
+            "-o", image_path,  # Save the image_for_detection.jpg
+            "--width", "4656",
+            "--height", "3496"
+        ])
+        return image_path
+    except KeyError as e:
+        print(f"Error: Missing key in config: {e}")
+        raise e  # Or handle it appropriately
+    except Exception as e:
+        print(f"Error: {e}")
         raise e
-    except yaml.YAMLError as e:
-        print("Error: Failed to parse the YAML config file.")
-        raise e
 
-    if 'model_path' not in config:
-        raise KeyError("Error: 'model_path' key is missing in the config file.")
 
-    return config
-
+if __name__ == "__main__":
+    print("Starting image capture...")  # Debug print
+    result = capture_image()
+    print(f"Image captured at: {result}")  # Debug print
