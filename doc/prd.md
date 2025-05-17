@@ -29,7 +29,7 @@ Camera input → AI detection → storage/logging
 ## 2. Goals
 
 ### 2.1 Primary Goals (Proof of Concept)
-- Real-time detection of Asian hornets in camera feeds
+- Detection of Asian hornets in camera feed with a 15 second interval and confidence of 80% or higher
 - Local deployment on a cost-effective Raspberry Pi 4
 - Simple installation and configuration
 - Storage of detection images and log records
