@@ -56,14 +56,39 @@ def create_model(model_path):
 
 
 if __name__ == '__main__':
-    config = load_config()
-    model = create_model(config['model_path'])
-    image_folder = config.get('images_folder')
-    image_path = os.path.join(image_folder, 'image_for_detection.jpg')
+    try:
+        """
+        Load the config
+        """
+        config = load_config()
+    except Exception as e:
+        print(f"Config error: {e}")
 
+    try:
+        """ 
+        Create the model 
+        """
+        model = create_model(config['model_path'])
+    except Exception as e:
+        print(f"Model error: {e}")
+
+    try:
+        """
+        Get the image folder
+        """
+        image_folder = config.get('images_folder')
+        image_path = os.path.join(image_folder, 'image_for_detection.jpg')
+    except Exception as e:
+        print(f"Image folder error: {e}")
+        
     while True:
-        image_path = capture_image()
-        # Add inference here
-        results = model(image_path)
-        print(results)
+        """
+        Capture an image, run inference, and save the results
+        """
+        try:
+            image_path = capture_image()
+            results = model(image_path)
+            print(results)
+        except Exception as e:
+            print(f"Error: {e}")
         time.sleep(config['capture_interval'])
