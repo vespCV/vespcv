@@ -44,45 +44,35 @@ def perform_inference(model, image_path):
     results = model(image_path)
     return results  # Return the raw results
 
-if __name__ == '__main__':
-    try:
-        config = load_config()
-    except Exception as e:
-        print(f"Config error: {e}")
-        exit(1) # Exit if config error
-
-    try:
-        model = create_model(config['model_path'])
-    except Exception as e:
-        print(f"Model error: {e}")
-        exit(1) # Exit if model error
-
+def inference_loop(model, config):
+    """Main loop for continuous inference cycles."""
     while True:
-        # Main loop for continuous inference cycles
         try:
-            # Capture the image
-            image_path = capture_image()
+            image_path = capture_image()  # Ensure this function handles errors
 
-            # Run one cycle of image capture and inference
             raw_results = perform_inference(model, image_path)
 
-            # Check if the image should be saved
-            # If the image has any detections with the confidence threshold specified in the config file
             should_save = False
-            if raw_results and raw_results[0].boxes is not None: # Check if results and boxes exist
+            if raw_results and raw_results[0].boxes is not None:
                 for box in raw_results[0].boxes:
-                    # Check for conf_treshold in config
-                    # Else use default
-                    if box.conf[0] > config.get('conf_threshold', 0.8): # Use .get() for safety
+                    if box.conf[0] > config.get('conf_threshold', 0.8):
                         should_save = True
-                        break # No need to check further boxes if one meets the criteria
+                        break
 
             if should_save:
                 save_annotated_image(image_path, raw_results, config)
 
         except Exception as e:
-            # TODO: add logging and catch specific errors
+            # Implement logging here
             print(f"Error: {e}")
 
-        # Controls the capture interval as specified in config file
         time.sleep(config['capture_interval'])
+
+if __name__ == '__main__':
+    try:
+        config = load_config()
+        model = create_model(config['model_path'])
+        inference_loop(model, config)
+    except Exception as e:
+        print(f"Model error: {e}")
+        exit(1) # Exit if model error
