@@ -168,7 +168,8 @@ class vespcvGUI(tk.Tk):
         control_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
 
         # Add Start and Stop Detection buttons
-        ttk.Button(control_frame, text="Start Detection").pack(side=tk.LEFT, padx=5)
+        # Removed Start Detection button as per PRD for auto-start on boot
+        ttk.Button(control_frame, text="Start Detection").pack(side=tk.LEFT, padx=5) # Kept for debugging
         ttk.Button(control_frame, text="Stop Detection").pack(side=tk.LEFT, padx=5)
 
     # We will add a method for the log frame later
