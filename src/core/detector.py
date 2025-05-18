@@ -3,11 +3,11 @@ This file is the main file for the detector.
 It loads the configuration, creates the model, and runs the inference.
 """
 
-
 from ultralytics import YOLO
 import yaml
 import time
 import os
+import cv2 # OpenCV
 
 from detection_utils import capture_image
 
@@ -39,16 +39,10 @@ def create_model(model_path):
 
 def perform_inference(model, image_path):
     """Run inference, returns raw results"""
-    # Update the image path (in case in the future we want to save more images, so it gets the latest image)
-    image_folder = config.get('images_folder')
-   
     # Run YOLO inference on the image
     results = model(image_path)
-    # TODO: process results
-    print(results)
-    return raw_results
+    return results  # Return the raw results
 
-    
 if __name__ == '__main__':
     try:
         config = load_config()
@@ -68,14 +62,51 @@ if __name__ == '__main__':
             # Capture the image
             image_path = capture_image()
 
-            #Run one cycle op image capture and inference
+            # Run one cycle of image capture and inference
             raw_results = perform_inference(model, image_path)
 
-            print(raw_results)
+            if raw_results:  # Check if results are not empty
+                results = raw_results[0]  # Get the first result
+                annotated_image = results.orig_img.copy()  # Get the image and make a copy for bounding box drawing
+                class_names = results.names  # Get the class name mapping
+
+                # Check if any boxes were detected before trying to loop
+                if results.boxes:
+                    # Iterate through each detected box
+                    for box in results.boxes:
+                        # Get coordinates of the bounding box
+                        x1, y1, x2, y2 = [int(coord) for coord in box.xyxy[0]]  # Get int coordinates
+
+                        # Get confidence
+                        confidence = box.conf[0]
+
+                        # Get class name ID and name
+                        class_id = int(box.cls[0])
+                        class_name = class_names[class_id]
+
+                        # Draw bounding box (Red color, thickness 4)
+                        cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 0, 255), 4)
+
+                        # Prepare label text
+                        label = f'{class_name} {confidence:.2f}'
+
+                        # Determine text position
+                        # Put text at the top left corner of the bounding box if space,
+                        # otherwise inside the bounding box
+                        text_y = y1 - 10 if y1 - 10 > 10 else y1 + 10
+
+                        # Put text on the image (white color, font scale 0.5, thickness 1)
+                        cv2.putText(annotated_image, label, (x1, text_y),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+
+                # Save or display the annotated image
+                output_path = os.path.join(config.get('images_folder'), 'annotated_image.jpg')
+                cv2.imwrite(output_path, annotated_image)  # Save the annotated image
+                print(f"Annotated image saved to {output_path}")
 
         except Exception as e:
-        # TODO: add logging and catch specific errors
-            print(f"Error: {e}") 
-       
-    # Controls the capture interval as specified in config file
-    time.sleep(config['capture_interval'])
+            # TODO: add logging and catch specific errors
+            print(f"Error: {e}")
+
+        # Controls the capture interval as specified in config file
+        time.sleep(config['capture_interval'])
