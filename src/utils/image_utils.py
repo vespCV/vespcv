@@ -26,5 +26,5 @@ def save_annotated_image(image_path, raw_results, config):
                 cv2.imwrite(output_path, annotated_image)
                 print(f"Annotated image saved to {output_path}")
 
-        except Exception as e:
+    except Exception as e:
             print(f"Error: {e}")

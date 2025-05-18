@@ -10,6 +10,7 @@ import os
 import cv2 # OpenCV
 
 from src.utils.detection_utils import capture_image
+from src.utils.image_utils import save_annotated_image
 
 def load_config(config_path='config/config.yaml'):
     """Load the configuration from the specified YAML file."""
@@ -65,44 +66,8 @@ if __name__ == '__main__':
             # Run one cycle of image capture and inference
             raw_results = perform_inference(model, image_path)
 
-            if raw_results:  # Check if results are not empty
-                results = raw_results[0]  # Get the first result
-                annotated_image = results.orig_img.copy()  # Get the image and make a copy for bounding box drawing
-                class_names = results.names  # Get the class name mapping
-
-                # Check if any boxes were detected before trying to loop
-                if results.boxes:
-                    # Iterate through each detected box
-                    for box in results.boxes:
-                        # Get coordinates of the bounding box
-                        x1, y1, x2, y2 = [int(coord) for coord in box.xyxy[0]]  # Get int coordinates
-
-                        # Get confidence
-                        confidence = box.conf[0]
-
-                        # Get class name ID and name
-                        class_id = int(box.cls[0])
-                        class_name = class_names[class_id]
-
-                        # Draw bounding box (Red color, thickness 4)
-                        cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 0, 255), 4)
-
-                        # Prepare label text
-                        label = f'{class_name} {confidence:.2f}'
-
-                        # Determine text position
-                        # Put text at the top left corner of the bounding box if space,
-                        # otherwise inside the bounding box
-                        text_y = y1 - 10 if y1 - 10 > 10 else y1 + 10
-
-                        # Put text on the image (white color, font scale 0.5, thickness 1)
-                        cv2.putText(annotated_image, label, (x1, text_y),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-
-                # Save or display the annotated image
-                output_path = os.path.join(config.get('images_folder'), 'annotated_image.jpg')
-                cv2.imwrite(output_path, annotated_image)  # Save the annotated image
-                print(f"Annotated image saved to {output_path}")
+            # Save the annotated image
+            save_annotated_image(image_path, raw_results, config)
 
         except Exception as e:
             # TODO: add logging and catch specific errors
