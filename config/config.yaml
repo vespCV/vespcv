@@ -4,6 +4,9 @@ model_path: "/home/vcv/vespcv/models/yolo112025-04-23_e200_p20_b-1_L4/weights/be
 # Locaton of the images folder
 images_folder: "/home/vcv/vespcv/data/images"
 
+# Location of the logfile
+log_file_path: 'data/logs/detector.log'
+
 # Confidence threshold for detection
 # A higher threshold means the model is more confident about the detection
 conf_threshold: 0.80
