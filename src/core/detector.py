@@ -37,18 +37,11 @@ def create_model(model_path):
         raise e
     return model
 
-def run_inference(config, model):
-    """Capture an image, run inference, returns raw results"""
+def perform_inference(model, image_path):
+    """Run inference, returns raw results"""
     # Update the image path (in case in the future we want to save more images, so it gets the latest image)
     image_folder = config.get('images_folder')
-
-    # Capture the image
-    image_path = capture_image()
-
-    # Setting image path to the latest image in the images folder
-    image_path = os.path.join(image_folder, 'image_for_detection.jpg')
-    # TODO after gui is ready: make this dynamic and not hardcoded   
-    
+   
     # Run YOLO inference on the image
     results = model(image_path)
     # TODO: process results
@@ -72,8 +65,11 @@ if __name__ == '__main__':
     while True:
         # Main loop for continuous inference cycles
         try:
+            # Capture the image
+            image_path = capture_image()
+
             #Run one cycle op image capture and inference
-            raw_results = run_inference(config, model)
+            raw_results = perform_inference(model, image_path)
 
             print(raw_results)
 
