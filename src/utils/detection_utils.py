@@ -2,7 +2,7 @@ import yaml
 import os
 import subprocess
 
-from config_loader import load_config
+from src.core.config_loader import load_config
 
 
 def capture_image():

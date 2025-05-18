@@ -9,7 +9,7 @@ import time
 import os
 import cv2 # OpenCV
 
-from detection_utils import capture_image
+from src.utils.detection_utils import capture_image
 
 def load_config(config_path='config/config.yaml'):
     """Load the configuration from the specified YAML file."""
