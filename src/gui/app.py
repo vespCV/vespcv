@@ -55,13 +55,13 @@ class vespcvGUI(tk.Tk):
         self.create_right_panel(right_frame)
 
     def create_left_panel(self, parent_frame):
-        # This method will contain the Live Feed and Charts
+        # This method will contain the Captured Image and Charts
 
-        # Live Feed section (takes up the top part of the left panel)
-        live_feed_frame = ttk.LabelFrame(parent_frame, text="Live Feed")
+        # Captured Image section (takes up the top part of the left panel)
+        live_feed_frame = ttk.LabelFrame(parent_frame, text="Captured Image")
         live_feed_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
 
-        # Placeholder for the live feed display (using a Canvas)
+        # Placeholder for the captured image display (using a Canvas)
         self.live_feed_canvas = tk.Canvas(live_feed_frame, bg="gray") # Store reference for updating later
         self.live_feed_canvas.pack(expand=True, fill=tk.BOTH)
 
