@@ -66,8 +66,19 @@ if __name__ == '__main__':
             # Run one cycle of image capture and inference
             raw_results = perform_inference(model, image_path)
 
-            # Save the annotated image
-            save_annotated_image(image_path, raw_results, config)
+            # Check if the image should be saved
+            # If the image has any detections with the confidence threshold specified in the config file
+            should_save = False
+            if raw_results and raw_results[0].boxes is not None: # Check if results and boxes exist
+                for box in raw_results[0].boxes:
+                    # Check for conf_treshold in config
+                    # Else use default
+                    if box.conf[0] > config.get('conf_threshold', 0.8): # Use .get() for safety
+                        should_save = True
+                        break # No need to check further boxes if one meets the criteria
+
+            if should_save:
+                save_annotated_image(image_path, raw_results, config)
 
         except Exception as e:
             # TODO: add logging and catch specific errors
