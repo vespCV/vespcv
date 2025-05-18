@@ -20,7 +20,7 @@ class vespcvGUI(tk.Tk):
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Add the main title
-        ttk.Label(header_frame, text="Bee Safe: Hornet Detector", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
+        ttk.Label(header_frame, text="Aziatische Hoornaar Flitskast", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
 
         # Add placeholder buttons for settings (using symbols for now)
         # You can replace these with icons later if needed
@@ -34,7 +34,31 @@ class vespcvGUI(tk.Tk):
         # This method will create the main area with live feed, detections, and charts
         main_frame = ttk.Frame(self)
         main_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
-        pass # Placeholder
+
+        # Create left and right frames within the main frame
+        left_frame = ttk.Frame(main_frame)
+        left_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5) # Add some padding between left and right
+
+        right_frame = ttk.Frame(main_frame)
+        right_frame.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, padx=5) # Add some padding
+
+        # Now we need methods to populate these frames
+        self.create_left_panel(left_frame)
+        self.create_right_panel(right_frame)
+
+    def create_left_panel(self, parent_frame):
+        # This method will contain the Live Feed and Charts
+        live_feed_frame = ttk.LabelFrame(parent_frame, text="Live Feed")
+        live_feed_frame.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
+
+        # We'll add the actual live feed widget (Canvas) here next
+
+    def create_right_panel(self, parent_frame):
+        # This method will contain Saved Detections and Harp Control / Logs
+        saved_detections_frame = ttk.LabelFrame(parent_frame, text="Saved Detections")
+        saved_detections_frame.pack(expand=True, fill=tk.BOTH, padx=5, pady=5) # Saved Detections will take up the top part of the right frame
+
+        # We will add the log/harp control frame below this one later
 
     def create_control_frame(self):
         # This method will create the control buttons (Start/Stop Detection)
