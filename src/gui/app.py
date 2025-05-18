@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class vespcvGUI(tk.Tk):
     def __init__(self):
@@ -25,8 +27,8 @@ class vespcvGUI(tk.Tk):
         # Add placeholder buttons for settings (using symbols for now)
         # You can replace these with icons later if needed
         ttk.Button(header_frame, text="⚙").pack(side=tk.RIGHT, padx=2) # General Settings
-        # ttk.Checkbutton(header_frame, text="🔵").pack(side=tk.RIGHT, padx=2) # Bluetooth toggle - consider if needed in header
-        # ttk.Checkbutton(header_frame, text="🖥").pack(side=tk.RIGHT, padx=2) # HDMI toggle - consider if needed in header
+        ttk.Checkbutton(header_frame, text="Bluetooth").pack(side=tk.RIGHT, padx=2) # Bluetooth toggle - consider if needed in header
+        ttk.Checkbutton(header_frame, text="HDMI").pack(side=tk.RIGHT, padx=2) # HDMI toggle - consider if needed in header
         ttk.Button(header_frame, text="⚙").pack(side=tk.RIGHT, padx=2) # Detection Settings (based on your v0_gui)
         # Add other icons/buttons from your image if desired
 
@@ -48,10 +50,45 @@ class vespcvGUI(tk.Tk):
 
     def create_left_panel(self, parent_frame):
         # This method will contain the Live Feed and Charts
-        live_feed_frame = ttk.LabelFrame(parent_frame, text="Live Feed")
-        live_feed_frame.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
 
-        # We'll add the actual live feed widget (Canvas) here next
+        # Live Feed section (takes up the top part of the left panel)
+        live_feed_frame = ttk.LabelFrame(parent_frame, text="Live Feed")
+        live_feed_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
+
+        # Placeholder for the live feed display (using a Canvas)
+        self.live_feed_canvas = tk.Canvas(live_feed_frame, bg="gray") # Store reference for updating later
+        self.live_feed_canvas.pack(expand=True, fill=tk.BOTH)
+
+        # Charts section (takes up the bottom part of the left panel)
+        charts_frame = ttk.Frame(parent_frame) # Frame to hold the two charts side-by-side
+        charts_frame.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH, padx=5, pady=5)
+
+        # Add placeholder methods for the individual charts within the charts_frame
+        self.create_insect_count_chart(charts_frame) # Bar chart
+        self.create_detection_timeline_chart(charts_frame) # Line chart
+
+    def create_insect_count_chart(self, parent_frame):
+        # This method will create the Insect Detection Count bar chart
+        bar_chart_frame = ttk.LabelFrame(parent_frame, text="Insect detectie teller")
+        bar_chart_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5) # Pack to the left in the charts_frame
+
+        # Create a matplotlib figure and axes
+        fig, ax = plt.subplots(figsize=(4, 3)) # Adjust figsize as needed
+
+        # Placeholder data (replace with real data later)
+        insects = ['Aziatische hoornaar', 'Europese hoornaar', 'Bij', 'Limonade wesp']
+        counts = [12, 8, 5, 15]
+        ax.bar(insects, counts, color='#FFA000') # Use a color that fits your scheme
+        ax.set_ylabel('Count')
+
+        # Embed the matplotlib figure in the Tkinter widget
+        canvas = FigureCanvasTkAgg(fig, master=bar_chart_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH)
+
+    def create_detection_timeline_chart(self, parent_frame):
+        # This method will create the Detection Timeline line chart
+        pass # Placeholder
 
     def create_right_panel(self, parent_frame):
         # This method will contain Saved Detections and Harp Control / Logs
