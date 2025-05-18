@@ -11,6 +11,7 @@ import cv2 # OpenCV
 
 from src.utils.detection_utils import capture_image
 from src.utils.image_utils import save_annotated_image
+from src.core.logger import start_temperature_logging, logger
 
 def load_config(config_path='config/config.yaml'):
     """Load the configuration from the specified YAML file."""
@@ -18,10 +19,10 @@ def load_config(config_path='config/config.yaml'):
         with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
     except FileNotFoundError as e:
-        print(f"Error: '{config_path}' file not found.")
+        logger.error("Error: '%s' file not found.", config_path)
         raise e
     except yaml.YAMLError as e:
-        print("Error: Failed to parse the YAML config file.")
+        logger.error("Error: Failed to parse the YAML config file.")
         raise e
 
     if 'model_path' not in config:
@@ -34,7 +35,7 @@ def create_model(model_path):
     try:
         model = YOLO(model_path)
     except Exception as e:
-        print(f"Error {e}: Failed to load YOLO model.")
+        logger.error("Failed to load YOLO model: %s", e)
         raise e
     return model
 
@@ -63,16 +64,21 @@ def inference_loop(model, config):
                 save_annotated_image(image_path, raw_results, config)
 
         except Exception as e:
-            # Implement logging here
-            print(f"Error: {e}")
+            logger.error("Error during inference: %s", e)
 
         time.sleep(config['capture_interval'])
 
-if __name__ == '__main__':
+def main():
+    """Main function to run the detector."""
+    start_temperature_logging()  # Start logging temperature
     try:
         config = load_config()
         model = create_model(config['model_path'])
-        inference_loop(model, config)
+        logger.info("Starting inference loop.")
+        inference_loop(model, config)  # Start the inference loop
     except Exception as e:
-        print(f"Model error: {e}")
-        exit(1) # Exit if model error
+        logger.critical("Critical error occurred: %s", e)
+        exit(1)  # Exit if there is a critical error
+
+if __name__ == '__main__':
+    main()  # Call the main function
