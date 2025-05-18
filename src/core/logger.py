@@ -1,11 +1,29 @@
 import logging
-import logging
 import time
 import threading
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logging (initial setup without handlers)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+def configure_logger(log_file_path):
+    """Configure the logger to write logs to the specified file."""
+    # Clear existing handlers to prevent duplicate logs
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # Create handlers
+    c_handler = logging.StreamHandler() # Console handler
+    f_handler = logging.FileHandler(log_file_path) # File handler
+
+    # Create formatters and add it to handlers
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    c_handler.setFormatter(formatter)
+    f_handler.setFormatter(formatter)
+
+    # Add handlers to the logger
+    logger.addHandler(c_handler)
+    logger.addHandler(f_handler)
 
 def get_cpu_temperature():
     """Get the CPU temperature in Celsius."""

@@ -11,7 +11,7 @@ import cv2 # OpenCV
 
 from src.utils.detection_utils import capture_image
 from src.utils.image_utils import save_annotated_image
-from src.core.logger import start_temperature_logging, logger
+from src.core.logger import start_temperature_logging, logger, configure_logger, get_cpu_temperature
 
 def load_config(config_path='config/config.yaml'):
     """Load the configuration from the specified YAML file."""
@@ -73,6 +73,11 @@ def main():
     start_temperature_logging()  # Start logging temperature
     try:
         config = load_config()
+        configure_logger(config['log_file_path'])
+        # Log CPU temperature at startup
+        initial_temp = get_cpu_temperature()
+        if initial_temp is not None:
+            logger.info("Initial CPU Temperature: %.2f °C", initial_temp)
         model = create_model(config['model_path'])
         logger.info("Starting inference loop.")
         inference_loop(model, config)  # Start the inference loop
