@@ -129,6 +129,11 @@ def inference_loop(model, config):
             cv2.imwrite(new_image_path, img)  # Save the full image
             print(f"Saved image: {new_image_path}")  # Debug print
 
+            # Save the image after inference with bounding boxes
+            after_inference_image_path = os.path.join('data/images', 'image_after_inference.jpg')
+            cv2.imwrite(after_inference_image_path, img)  # Save the image with bounding boxes
+            print(f"Saved image after inference: {after_inference_image_path}")  # Debug print
+
         except Exception as e:
             logger.error("Error during inference: %s", e)
 
