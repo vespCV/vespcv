@@ -9,7 +9,7 @@ import time
 class vespcvGUI(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("|Geelpotige Hoornaar Detector")
+        self.title("Aziatisch-/Geelpotige Hoornaar Detector")
         self.geometry("1024x768")
         self.configure(bg="#FFF8E1") # Light amber background
 
@@ -35,7 +35,7 @@ class vespcvGUI(tk.Tk):
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Add the main title
-        ttk.Label(header_frame, text="Geelpotige Hoornaar Detector", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
+        ttk.Label(header_frame, text="Aziatisch-/Geelpotige Hoornaar Detector", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
         ttk.Button(header_frame, text="UITZETTEN", style='Red.TButton').pack(side=tk.RIGHT, padx=2)
         ttk.Button(header_frame, text="STOP DETECTIE", style='Orange.TButton').pack(side=tk.RIGHT, padx=2) 
         ttk.Button(header_frame, text="START DETECTIE", style='Green.TButton').pack(side=tk.RIGHT, padx=2) 
