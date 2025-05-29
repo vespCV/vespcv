@@ -184,17 +184,6 @@ class vespcvGUI(tk.Tk):
             self.detection_thread.join(timeout=1)
         print("Detection stopped")  # Replace this with proper logging later
 
-    def detection_loop(self):
-        """Main detection loop running in a separate thread"""
-        while self.is_detecting:
-            try:
-                # TODO: Add actual detection code here
-                print("Detection cycle")  # Placeholder
-                time.sleep(15)  # 15 second interval
-            except Exception as e:
-                print(f"Error in detection loop: {e}")
-                time.sleep(1)
-
     # TODO: add a method for the log frame later
 
 if __name__ == "__main__":
