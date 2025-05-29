@@ -86,7 +86,7 @@ class vespcvGUI(tk.Tk):
 
         # Placeholder data (replace with real data later)
         insects = ['Aziatische hoornaar', 'Europese hoornaar', 'HoningBij', 'Limonade wesp', 'Stadsreus']
-        counts = [12, 8, 5, 15]
+        counts = [12, 8, 5, 15, 0]
         ax.bar(insects, counts, color='#FFA000') # Use a color that fits your scheme
         ax.set_ylabel('Count')
 
