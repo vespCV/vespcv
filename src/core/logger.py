@@ -37,14 +37,29 @@ def get_cpu_temperature():
 
 def log_temperature():
     """Log the CPU temperature every 15 minutes."""
-    while True:
-        temperature = get_cpu_temperature()
-        if temperature is not None:
-            logger.info("CPU Temperature: %.2f °C", temperature)
-        time.sleep(900)  # Sleep for 15 minutes
+    with open('data/logs/system_stats.log', 'a') as stats_file:  # Open the log file
+        while True:
+            temperature = get_cpu_temperature()
+            if temperature is not None:
+                logger.info("CPU Temperature: %.2f °C", temperature)
+                stats_file.write(f"{time.time()},{temperature:.2f}\n")  # Save timestamp and temperature
+            time.sleep(900)  # Sleep for 15 minutes
 
 def start_temperature_logging():
     """Start the temperature logging in a separate thread."""
     temp_thread = threading.Thread(target=log_temperature)
     temp_thread.daemon = True  # Daemonize thread
     temp_thread.start()
+
+def main():
+    """Main function to start temperature logging."""
+    configure_logger('data/logs/system.log')  # Set your log file path
+    start_temperature_logging()  # Start logging in a separate thread
+    try:
+        while True:
+            time.sleep(1)  # Keep the main thread alive
+    except KeyboardInterrupt:
+        print("Temperature logging stopped.")
+
+if __name__ == "__main__":
+    main()  # Call the main function
