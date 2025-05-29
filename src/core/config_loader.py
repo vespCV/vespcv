@@ -12,7 +12,7 @@ def load_config(config_path='config/config.yaml'):
     Raises:
         FileNotFoundError: If the config file does not exist.
         yaml.YAMLError: If there is an error parsing the YAML file.
-        KeyError: If 'model_path' key is missing in the configuration.
+        KeyError: If 'model_path' or 'class_names' key is missing in the configuration.
     """
     try:
         with open(config_path, 'r') as file:
@@ -26,6 +26,9 @@ def load_config(config_path='config/config.yaml'):
 
     if 'model_path' not in config:
         raise KeyError("Error: 'model_path' key is missing in the config file.")
+    
+    if 'class_names' not in config:
+        raise KeyError("Error: 'class_names' key is missing in the config file.")
 
     return config
 

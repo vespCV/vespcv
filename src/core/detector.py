@@ -28,6 +28,9 @@ def load_config(config_path='config/config.yaml'):
 
     if 'model_path' not in config:
         raise KeyError("Error: 'model_path' key is missing in the config file.")
+    
+    if 'class_names' not in config:
+        raise KeyError("Error: 'class_names' key is missing in the config file.")
 
     return config
 
@@ -88,15 +91,17 @@ def inference_loop(model, config):
                     # Draw the bounding box
                     cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Green box
 
+                    # Get the class name from the config
+                    class_name = config['class_names'][int(cls)]  # Assuming cls is an index
+
                     # Optionally, add a label with class name and confidence
-                    label = f"Class: {int(cls)}, Conf: {conf:.2f}"
+                    label = f"Class: {class_name}, Conf: {conf:.2f}"
                     cv2.putText(img, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                    # Format the filename with confidence score and full timestamp
-                    class_name_short = str(int(cls))[:3]  # Get the first three letters of the class index
+                    # Format the filename with class name and confidence score
                     confidence_score = f"{conf:.2f}"  # Format confidence to two decimal places
                     timestamp = time.strftime("%Y%m%d-%H%M%S")  # Format time and date
-                    new_image_name = f"{class_name_short}-{confidence_score}-{timestamp}.jpg"
+                    new_image_name = f"{class_name}-{confidence_score}-{timestamp}.jpg"  # Use class name
                     new_image_path = os.path.join('data/images', new_image_name)
 
                     # Save the full image with the new filename
