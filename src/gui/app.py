@@ -19,8 +19,9 @@ class vespcvGUI(tk.Tk):
 
         # Configure styles for custom buttons
         style = ttk.Style()
-        style.configure('Red.TButton', background='red', foreground='black') # Configure style for red background
-        style.configure('Green.TButton', background='green', foreground='black') # Configure style for green background
+        style.configure('Red.TButton', background='red', foreground='black') # Config style for power off button
+        style.configure('Orange.TButton', background='orange', foreground='black') # Config style for stop detection button
+        style.configure('Green.TButton', background='green', foreground='black') # Config style for start detection buttong
 
         # Call methods to create different parts of the GUI
         self.create_header()
@@ -35,7 +36,8 @@ class vespcvGUI(tk.Tk):
 
         # Add the main title
         ttk.Label(header_frame, text="Aziatische Hoornaar Flitskast", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
-        ttk.Button(header_frame, text="UITZETTEN", style='Red.TButton').pack(side=tk.RIGHT, padx=2) 
+        ttk.Button(header_frame, text="UITZETTEN", style='Red.TButton').pack(side=tk.RIGHT, padx=2)
+        ttk.Button(header_frame, text="STOP DETECTIE", style='Orange.TButton').pack(side=tk.RIGHT, padx=2) 
         ttk.Button(header_frame, text="START DETECTIE", style='Green.TButton').pack(side=tk.RIGHT, padx=2) 
 
     def create_main_content(self):
