@@ -7,6 +7,50 @@ import threading
 import time
 import os
 from PIL import Image, ImageTk  # Import PIL for image handling
+import cv2
+import queue
+import logging
+from threading import Lock
+from typing import Optional, List, Dict
+import numpy as np
+
+class ImageHandler:
+    def __init__(self, logger):
+        self.logger = logger
+        self._image_cache = {}
+        self._lock = Lock()
+    
+    def load_and_resize_image(self, image_path: str, target_size: tuple) -> Optional[Image.Image]:
+        """Load and resize an image while maintaining aspect ratio."""
+        try:
+            abs_path = os.path.abspath(image_path)
+            if not os.path.exists(abs_path):
+                self.logger.error(f"Image file not found: {abs_path}")
+                return None
+                
+            with self._lock:
+                img = Image.open(abs_path)
+                img.thumbnail(target_size, Image.Resampling.LANCZOS)
+                return img
+        except Exception as e:
+            self.logger.error(f"Error loading image: {e}")
+            return None
+    
+    def save_inference_image(self, image: np.ndarray, base_dir: str) -> Optional[str]:
+        """Save the inference image and return its path."""
+        try:
+            images_dir = os.path.join(base_dir, 'data', 'images')
+            os.makedirs(images_dir, exist_ok=True)
+            
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            image_path = os.path.join(images_dir, f'image_after_inference_{timestamp}.jpg')
+            
+            cv2.imwrite(image_path, image)
+            self.logger.info(f"Saved inference image to: {image_path}")
+            return image_path
+        except Exception as e:
+            self.logger.error(f"Error saving inference image: {e}")
+            return None
 
 class vespcvGUI(tk.Tk):
     def __init__(self):
@@ -30,6 +74,21 @@ class vespcvGUI(tk.Tk):
         self.create_main_content()
         self.create_control_frame()
         # We will add log frame later
+
+        # Initialize image queue
+        self.image_queue = queue.Queue()
+
+        # Initialize logger
+        self.logger = logging.getLogger(__name__)
+
+        self._cleanup_handlers = []
+
+        self.image_lock = Lock()
+
+        # Initialize image handler
+        self.image_handler = ImageHandler(self.logger)
+
+        self.show_captured_image()
 
     def create_header(self):
         # This method will create the header section
@@ -67,7 +126,7 @@ class vespcvGUI(tk.Tk):
         live_feed_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
 
         # Placeholder for the captured image display (using a Canvas)
-        self.live_feed_canvas = tk.Canvas(live_feed_frame, bg="gray") # Store reference for updating later
+        self.live_feed_canvas = tk.Canvas(live_feed_frame, bg="gray", width=400, height=300)  # Set a fixed size
         self.live_feed_canvas.pack(expand=True, fill=tk.BOTH)
 
         # Charts section (takes up the bottom part of the left panel)
@@ -87,7 +146,7 @@ class vespcvGUI(tk.Tk):
         fig, ax = plt.subplots(figsize=(4, 3)) # Adjust figsize as needed
 
         # Placeholder data (replace with real data later)
-        insects = ['Aziatische hoornaar', 'Europese hoornaar', 'HoningBij', 'Limonade wesp', 'Stadsreus']
+        insects = ['vvel', 'vcra', 'amel', 'vesp', 'zon']
         counts = [12, 8, 5, 15, 0]
         ax.bar(insects, counts, color='#FFA000') # Use a color that fits your scheme
         ax.set_ylabel('Count')
@@ -160,33 +219,38 @@ class vespcvGUI(tk.Tk):
         image_data = []
         for image in vvel_images:
             parts = image.split('-')
-            if len(parts) >= 2:  # Ensure the filename has the expected format
-                confidence_score = float(parts[1])  # Extract confidence score
-                timestamp = parts[2]  # Extract timestamp
-                image_data.append((image, confidence_score, timestamp))
+            if len(parts) >= 4:  # Ensure the filename has the expected format
+                confidence_score = float(parts[1])
+                time_part = parts[3].split('.')[0]  # '215530.jpg' -> '215530'
+                image_data.append((image, confidence_score, time_part))
 
         # Sort by confidence score in descending order and take the top 4
         image_data.sort(key=lambda x: x[1], reverse=True)
         top_images = image_data[:4]  # Get the top 4 images
 
         # Add image frames to the grid
-        for i, (image_name, _, timestamp) in enumerate(top_images):
+        for i, (image_name, _, time_part) in enumerate(top_images):
             image_path = os.path.join(images_folder, image_name)
             img = Image.open(image_path)
             img.thumbnail((100, 100))  # Resize image to fit in the frame
             photo = ImageTk.PhotoImage(img)
 
             # Create a frame for each image
-            placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120, relief='solid', borderwidth=1)
-            placeholder_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=2, pady=2)
+            placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120)
+            placeholder_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=6, pady=6)
 
             # Add the image to the frame
             label = ttk.Label(placeholder_frame, image=photo)
             label.image = photo  # Keep a reference to avoid garbage collection
             label.pack(expand=True, fill=tk.BOTH)
 
-            # Add a label for the timestamp instead of the image name
-            ttk.Label(placeholder_frame, text=timestamp, anchor="center").pack(expand=True, fill=tk.BOTH)
+            # Format timestamp to hh:mm:ss
+            if len(time_part) == 6:
+                formatted_time = f"{time_part[:2]}:{time_part[2:4]}:{time_part[4:]}"
+            else:
+                formatted_time = time_part  # fallback
+
+            ttk.Label(placeholder_frame, text=formatted_time, anchor="center").pack(expand=True, fill=tk.BOTH)
 
     def create_log_display(self, parent_frame):
         # Create the log display area
@@ -215,7 +279,120 @@ class vespcvGUI(tk.Tk):
             self.detection_thread.join(timeout=1)
         print("Detection stopped")  # Replace this with proper logging later
 
-    # TODO: add a method for the log frame later
+    def inference_loop(self, model, config):
+        while True:
+            try:
+                image = self._capture_and_process_image(model, config)
+                self._save_detection_results(image, config)
+                self._update_ui(image)
+            except Exception as e:
+                self.logger.error(f"Inference error: {e}")
+
+    def _capture_and_process_image(self, model, config):
+        image_path = capture_image()  # Ensure this function handles errors
+        print(f"Captured image path: {image_path}")  # Debug print
+
+        # Load the full image (no magnification)
+        img = cv2.imread(image_path)
+
+        # Apply YOLO inference to the full image
+        results = model(img)[0]
+
+        # Initialize variables to track detections
+        detected_classes = {}  # Dictionary to count occurrences of each class
+        class_3_detected = False  # Flag for class 3 detection
+
+        # Check for class detection with high confidence
+        for result in results.boxes.data.tolist():  # Each detection in format [x1, y1, x2, y2, conf, class]
+            x1, y1, x2, y2, conf, cls = result[:6]
+            if conf > config.get('conf_threshold', 0.8):  # Use threshold from config
+                # Draw the bounding box
+                cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Green box
+
+                # Get the class name from the config
+                class_name = config['class_names'][int(cls)]  # Assuming cls is an index
+                detected_classes[int(cls)] = detected_classes.get(int(cls), 0) + 1  # Count occurrences
+
+                # Optionally, add a label with class name and confidence
+                label = f"Class: {class_name}, Conf: {conf:.2f}"
+                cv2.putText(img, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+                # Check if class 3 is detected
+                if int(cls) == 3:
+                    class_3_detected = True
+
+        # Determine the class name for the filename
+        if class_3_detected:
+            final_class_name = "vvel"
+        else:
+            # Find the most detected species
+            most_detected_class = max(detected_classes, key=detected_classes.get, default=None)
+            if most_detected_class is not None:
+                final_class_name = config['class_names'][most_detected_class]  # Use the name of the most detected class
+            else:
+                print("No classes detected; image not saved.")  # Debug print
+                return None  # Skip saving the image if no classes are detected
+
+        # Format the filename with the determined class name and confidence score
+        confidence_score = f"{conf:.2f}"  # Use the last detected confidence score
+        timestamp = time.strftime("%Y%m%d-%H%M%S")  # Format time and date
+        new_image_name = f"{final_class_name}-{confidence_score}-{timestamp}.jpg"  # Use final class name
+        new_image_path = os.path.join('data/images', new_image_name)
+
+        # Save the full image with the new filename
+        cv2.imwrite(new_image_path, img)  # Save the full image
+        print(f"Saved image: {new_image_path}")  # Debug print
+
+        # Save the image after inference with bounding boxes
+        after_inference_image_path = os.path.join('data/images/', 'image_after_inference.jpg')
+        cv2.imwrite(after_inference_image_path, img)  # Save the image with bounding boxes
+        print(f"Saved image after inference: {after_inference_image_path}")  # Debug print
+
+        # Update the live feed with the new image
+        print(f"Updating live feed with image: {after_inference_image_path}")  # Debug print
+        self.update_live_feed(after_inference_image_path)
+
+        self.show_captured_image()
+
+        return after_inference_image_path
+
+    def _save_detection_results(self, image_path, config):
+        # Implementation of _save_detection_results method
+        pass
+
+    def _update_ui(self, image_path):
+        self.update_live_feed(image_path)
+
+    def update_live_feed(self, image_path: str) -> None:
+        """Update the live feed canvas with the new image."""
+        with self.image_lock:
+            try:
+                img = Image.open(image_path)
+                img.thumbnail((400, 300))
+                photo = ImageTk.PhotoImage(img)
+
+                # Clear the canvas and display the new image
+                self.live_feed_canvas.delete("all")  # Clear the canvas
+                self.live_feed_canvas.create_image(0, 0, anchor=tk.NW, image=photo)  # Place the image in the canvas
+                self.live_feed_canvas.image = photo  # Keep a reference to avoid garbage collection
+                
+                # Force the GUI to update
+                self.update()  # Ensure the GUI refreshes to show the new image
+            except Exception as e:
+                self.logger.error(f"Failed to update live feed: {e}")
+                # Show user-friendly error message
+
+    def show_captured_image(self):
+        image_path = '/home/vcv/vespcv/data/images/image_after_inference.jpg'
+        time.sleep(0.5)  # Add a 0.5 second delay to avoid file write/read race
+        if os.path.exists(image_path):
+            self.update_live_feed(image_path)
+        else:
+            self.live_feed_canvas.delete("all")
+
+    def __del__(self):
+        for handler in self._cleanup_handlers:
+            handler()
 
 if __name__ == "__main__":
     app = vespcvGUI()
