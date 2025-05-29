@@ -8,6 +8,7 @@ import yaml
 import time
 import os
 import cv2 # OpenCV
+import subprocess
 
 from src.utils.detection_utils import capture_image
 from src.utils.image_utils import save_annotated_image
@@ -45,23 +46,62 @@ def perform_inference(model, image_path):
     results = model(image_path)
     return results  # Return the raw results
 
+def capture_image():
+    """Capture an image using libcamera-still and save it to the configured path.
+    
+    Returns:
+        str: Path to the captured image
+    """
+    try:
+        config = load_config()  # Loads the config dict
+        images_folder = config.get('images_folder', '/home/vcv/vespcv/data/images')  # Update to your path
+        image_path = os.path.join(images_folder, "image_for_detection.jpg")
+        print(f"Attempting to save image to: {image_path}")  # Debug print
+        subprocess.run([ 
+            "libcamera-still",
+            "-o", image_path,  # Save the image_for_detection.jpg
+            "--width", "4656",
+            "--height", "3496"
+        ])
+        return image_path
+    except Exception as e:
+        print(f"Error capturing image: {e}")
+        raise e
+
 def inference_loop(model, config):
     """Main loop for continuous inference cycles."""
     while True:
         try:
             image_path = capture_image()  # Ensure this function handles errors
+            print(f"Captured image path: {image_path}")  # Debug print
 
-            raw_results = perform_inference(model, image_path)
+            # Load the full image (no magnification)
+            img = cv2.imread(image_path)
 
-            should_save = False
-            if raw_results and raw_results[0].boxes is not None:
-                for box in raw_results[0].boxes:
-                    if box.conf[0] > config.get('conf_threshold', 0.8):
-                        should_save = True
-                        break
+            # Apply YOLO inference to the full image
+            results = model(img)[0]
 
-            if should_save:
-                save_annotated_image(image_path, raw_results, config)
+            # Check for class detection with high confidence
+            for result in results.boxes.data.tolist():  # Each detection in format [x1, y1, x2, y2, conf, class]
+                x1, y1, x2, y2, conf, cls = result[:6]
+                if conf > config.get('conf_threshold', 0.8):  # Use threshold from config
+                    # Draw the bounding box
+                    cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Green box
+
+                    # Optionally, add a label with class name and confidence
+                    label = f"Class: {int(cls)}, Conf: {conf:.2f}"
+                    cv2.putText(img, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+                    # Format the filename with confidence score and full timestamp
+                    class_name_short = str(int(cls))[:3]  # Get the first three letters of the class index
+                    confidence_score = f"{conf:.2f}"  # Format confidence to two decimal places
+                    timestamp = time.strftime("%Y%m%d-%H%M%S")  # Format time and date
+                    new_image_name = f"{class_name_short}-{confidence_score}-{timestamp}.jpg"
+                    new_image_path = os.path.join('data/images', new_image_name)
+
+                    # Save the full image with the new filename
+                    cv2.imwrite(new_image_path, img)  # Save the full image
+                    print(f"Saved image: {new_image_path}")  # Debug print
 
         except Exception as e:
             logger.error("Error during inference: %s", e)
