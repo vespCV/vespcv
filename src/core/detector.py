@@ -84,6 +84,10 @@ def inference_loop(model, config):
             # Apply YOLO inference to the full image
             results = model(img)[0]
 
+            # Initialize variables to track detections
+            detected_classes = {}  # Dictionary to count occurrences of each class
+            class_3_detected = False  # Flag for class 3 detection
+
             # Check for class detection with high confidence
             for result in results.boxes.data.tolist():  # Each detection in format [x1, y1, x2, y2, conf, class]
                 x1, y1, x2, y2, conf, cls = result[:6]
@@ -93,20 +97,37 @@ def inference_loop(model, config):
 
                     # Get the class name from the config
                     class_name = config['class_names'][int(cls)]  # Assuming cls is an index
+                    detected_classes[int(cls)] = detected_classes.get(int(cls), 0) + 1  # Count occurrences
 
                     # Optionally, add a label with class name and confidence
                     label = f"Class: {class_name}, Conf: {conf:.2f}"
                     cv2.putText(img, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                    # Format the filename with class name and confidence score
-                    confidence_score = f"{conf:.2f}"  # Format confidence to two decimal places
-                    timestamp = time.strftime("%Y%m%d-%H%M%S")  # Format time and date
-                    new_image_name = f"{class_name}-{confidence_score}-{timestamp}.jpg"  # Use class name
-                    new_image_path = os.path.join('data/images', new_image_name)
+                    # Check if class 3 is detected
+                    if int(cls) == 3:
+                        class_3_detected = True
 
-                    # Save the full image with the new filename
-                    cv2.imwrite(new_image_path, img)  # Save the full image
-                    print(f"Saved image: {new_image_path}")  # Debug print
+            # Determine the class name for the filename
+            if class_3_detected:
+                final_class_name = "vvel"
+            else:
+                # Find the most detected species
+                most_detected_class = max(detected_classes, key=detected_classes.get, default=None)
+                if most_detected_class is not None:
+                    final_class_name = config['class_names'][most_detected_class]  # Use the name of the most detected class
+                else:
+                    print("No classes detected; image not saved.")  # Debug print
+                    continue  # Skip saving the image if no classes are detected
+
+            # Format the filename with the determined class name and confidence score
+            confidence_score = f"{conf:.2f}"  # Use the last detected confidence score
+            timestamp = time.strftime("%Y%m%d-%H%M%S")  # Format time and date
+            new_image_name = f"{final_class_name}-{confidence_score}-{timestamp}.jpg"  # Use final class name
+            new_image_path = os.path.join('data/images', new_image_name)
+
+            # Save the full image with the new filename
+            cv2.imwrite(new_image_path, img)  # Save the full image
+            print(f"Saved image: {new_image_path}")  # Debug print
 
         except Exception as e:
             logger.error("Error during inference: %s", e)
