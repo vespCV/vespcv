@@ -9,7 +9,7 @@ import time
 class vespcvGUI(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Vespa velutina Flitser")
+        self.title("|Geelpotige Hoornaar Detector")
         self.geometry("1024x768")
         self.configure(bg="#FFF8E1") # Light amber background
 
@@ -35,7 +35,7 @@ class vespcvGUI(tk.Tk):
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Add the main title
-        ttk.Label(header_frame, text="Aziatische Hoornaar Flitskast", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
+        ttk.Label(header_frame, text="Geelpotige Hoornaar Detector", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
         ttk.Button(header_frame, text="UITZETTEN", style='Red.TButton').pack(side=tk.RIGHT, padx=2)
         ttk.Button(header_frame, text="STOP DETECTIE", style='Orange.TButton').pack(side=tk.RIGHT, padx=2) 
         ttk.Button(header_frame, text="START DETECTIE", style='Green.TButton').pack(side=tk.RIGHT, padx=2) 
@@ -61,7 +61,7 @@ class vespcvGUI(tk.Tk):
         # This method will contain the Captured Image and Charts
 
         # Captured Image section (takes up the top part of the left panel)
-        live_feed_frame = ttk.LabelFrame(parent_frame, text="Captured Image")
+        live_feed_frame = ttk.LabelFrame(parent_frame, text="Vastgelegde afbeelding") # Captured image
         live_feed_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
 
         # Placeholder for the captured image display (using a Canvas)
@@ -78,14 +78,14 @@ class vespcvGUI(tk.Tk):
 
     def create_insect_count_chart(self, parent_frame):
         # This method will create the Insect Detection Count bar chart
-        bar_chart_frame = ttk.LabelFrame(parent_frame, text="Insect detectie teller")
+        bar_chart_frame = ttk.LabelFrame(parent_frame, text="Insecten detectie teller")
         bar_chart_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5) # Pack to the left in the charts_frame
 
         # Create a matplotlib figure and axes
         fig, ax = plt.subplots(figsize=(4, 3)) # Adjust figsize as needed
 
         # Placeholder data (replace with real data later)
-        insects = ['Aziatische hoornaar', 'Europese hoornaar', 'Bij', 'Limonade wesp']
+        insects = ['Aziatische hoornaar', 'Europese hoornaar', 'HoningBij', 'Limonade wesp', 'Stadsreus']
         counts = [12, 8, 5, 15]
         ax.bar(insects, counts, color='#FFA000') # Use a color that fits your scheme
         ax.set_ylabel('Count')
@@ -97,7 +97,7 @@ class vespcvGUI(tk.Tk):
 
     def create_detection_timeline_chart(self, parent_frame):
         # This method will create the Detection Timeline line chart
-        line_chart_frame = ttk.LabelFrame(parent_frame, text="Detection Timeline")
+        line_chart_frame = ttk.LabelFrame(parent_frame, text="Detectie tijdlijn")
         line_chart_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5) # Pack to the left in the charts_frame, next to the bar chart
 
         # Create a matplotlib figure and axes
@@ -120,7 +120,7 @@ class vespcvGUI(tk.Tk):
         # This method will contain Saved Detections and Logs
 
         # Saved Detections section (takes up the top part of the right panel)
-        saved_detections_frame = ttk.LabelFrame(parent_frame, text="Saved Detections")
+        saved_detections_frame = ttk.LabelFrame(parent_frame, text="Opgeslagen detecties") #Saved detections
         saved_detections_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5) # Saved Detections will take up the top part of the right frame
 
         # Add content to the Saved Detections frame
@@ -141,7 +141,7 @@ class vespcvGUI(tk.Tk):
         controls_frame.pack(fill=tk.X, padx=5, pady=5)
 
         # Filter button
-        ttk.Button(controls_frame, text="Asian Hornets Only").pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text="Alleen Vespa velutina").pack(side=tk.LEFT, padx=5) # Detect only Vespa velutina
 
         # Download button
         ttk.Button(controls_frame, text="Download").pack(side=tk.RIGHT, padx=5)
@@ -155,7 +155,7 @@ class vespcvGUI(tk.Tk):
             placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120, relief='solid', borderwidth=1) # Give them a fixed size and border
             placeholder_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=2, pady=2)
             # Add placeholder content inside the frame (e.g., a label or canvas)
-            ttk.Label(placeholder_frame, text=f"Detection {i+1}", anchor="center").pack(expand=True, fill=tk.BOTH)
+            ttk.Label(placeholder_frame, text=f"Detectie {i+1}", anchor="center").pack(expand=True, fill=tk.BOTH)
 
     def create_log_display(self, parent_frame):
         # Create the log display area
@@ -168,11 +168,6 @@ class vespcvGUI(tk.Tk):
         control_frame = ttk.Frame(self)
         control_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
 
-        # Add Start and Stop Detection buttons
-        # Removed Start Detection button as per PRD for auto-start on boot
-        # ttk.Button(control_frame, text="Start Detection").pack(side=tk.LEFT, padx=5) # Kept for debugging
-        # ttk.Button(control_frame, text="Stop Detection").pack(side=tk.LEFT, padx=5)
-
     def start_detection(self):
         """Start the detection process"""
         if not self.is_detecting:
@@ -180,7 +175,7 @@ class vespcvGUI(tk.Tk):
             self.detection_thread = threading.Thread(target=self.detection_loop)
             self.detection_thread.daemon = True
             self.detection_thread.start()
-            print("Detection started")  # Replace this with proper logging later
+            print("Detection stopped")  # Replace this with proper logging later
 
     def stop_detection(self):
         """Stop the detection process"""
@@ -200,7 +195,7 @@ class vespcvGUI(tk.Tk):
                 print(f"Error in detection loop: {e}")
                 time.sleep(1)
 
-    # We will add a method for the log frame later
+    # TODO: add a method for the log frame later
 
 if __name__ == "__main__":
     app = vespcvGUI()
