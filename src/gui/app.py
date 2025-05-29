@@ -5,6 +5,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import scrolledtext # Import scrolledtext for a text area with a scrollbar
 import threading
 import time
+import os
+from PIL import Image, ImageTk  # Import PIL for image handling
 
 class vespcvGUI(tk.Tk):
     def __init__(self):
@@ -134,14 +136,14 @@ class vespcvGUI(tk.Tk):
         self.create_log_display(log_frame)
 
     def create_saved_detections_section(self, parent_frame):
-        # This method will create the content inside the Saved Detections LabelFrame
-
+        """This method will create the content inside the Saved Detections LabelFrame"""
+        
         # Frame for filter and download controls
         controls_frame = ttk.Frame(parent_frame)
         controls_frame.pack(fill=tk.X, padx=5, pady=5)
 
         # Filter button
-        ttk.Button(controls_frame, text="Alleen Vespa velutina").pack(side=tk.LEFT, padx=5) # Detect only Vespa velutina
+        ttk.Button(controls_frame, text="Alleen Vespa velutina").pack(side=tk.LEFT, padx=5)  # Detect only Vespa velutina
 
         # Download button
         ttk.Button(controls_frame, text="Download").pack(side=tk.RIGHT, padx=5)
@@ -150,12 +152,41 @@ class vespcvGUI(tk.Tk):
         detections_grid_frame = ttk.Frame(parent_frame)
         detections_grid_frame.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
 
-        # Add 4 placeholder frames for detection entries
-        for i in range(4):
-            placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120, relief='solid', borderwidth=1) # Give them a fixed size and border
+        # Load images that start with "vvel"
+        images_folder = '/home/vcv/vespcv/data/images'  # Update to your images folder path
+        vvel_images = [f for f in os.listdir(images_folder) if f.startswith('vvel')]
+        
+        # Extract confidence scores and sort images
+        image_data = []
+        for image in vvel_images:
+            parts = image.split('-')
+            if len(parts) >= 2:  # Ensure the filename has the expected format
+                confidence_score = float(parts[1])  # Extract confidence score
+                timestamp = parts[2]  # Extract timestamp
+                image_data.append((image, confidence_score, timestamp))
+
+        # Sort by confidence score in descending order and take the top 4
+        image_data.sort(key=lambda x: x[1], reverse=True)
+        top_images = image_data[:4]  # Get the top 4 images
+
+        # Add image frames to the grid
+        for i, (image_name, _, timestamp) in enumerate(top_images):
+            image_path = os.path.join(images_folder, image_name)
+            img = Image.open(image_path)
+            img.thumbnail((100, 100))  # Resize image to fit in the frame
+            photo = ImageTk.PhotoImage(img)
+
+            # Create a frame for each image
+            placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120, relief='solid', borderwidth=1)
             placeholder_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=2, pady=2)
-            # Add placeholder content inside the frame (e.g., a label or canvas)
-            ttk.Label(placeholder_frame, text=f"Detectie {i+1}", anchor="center").pack(expand=True, fill=tk.BOTH)
+
+            # Add the image to the frame
+            label = ttk.Label(placeholder_frame, image=photo)
+            label.image = photo  # Keep a reference to avoid garbage collection
+            label.pack(expand=True, fill=tk.BOTH)
+
+            # Add a label for the timestamp instead of the image name
+            ttk.Label(placeholder_frame, text=timestamp, anchor="center").pack(expand=True, fill=tk.BOTH)
 
     def create_log_display(self, parent_frame):
         # Create the log display area
