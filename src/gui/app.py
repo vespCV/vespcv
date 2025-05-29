@@ -3,6 +3,8 @@ from tkinter import ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import scrolledtext # Import scrolledtext for a text area with a scrollbar
+import threading
+import time
 
 class vespcvGUI(tk.Tk):
     def __init__(self):
@@ -11,9 +13,14 @@ class vespcvGUI(tk.Tk):
         self.geometry("1024x768")
         self.configure(bg="#FFF8E1") # Light amber background
 
-        # Configure a style for a red button
+        # Initialize detection state
+        self.is_detecting = False
+        self.detection_thread = None
+
+        # Configure styles for custom buttons
         style = ttk.Style()
-        style.configure('TachtigRed.TButton', background='red', foreground='black') # Configure style for red background
+        style.configure('Red.TButton', background='red', foreground='black') # Configure style for red background
+        style.configure('Green.TButton', background='green', foreground='black') # Configure style for green background
 
         # Call methods to create different parts of the GUI
         self.create_header()
@@ -28,29 +35,23 @@ class vespcvGUI(tk.Tk):
 
         # Add the main title
         ttk.Label(header_frame, text="Aziatische Hoornaar Flitskast", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
-
-        # Add placeholder buttons for settings (using symbols for now)
-        # You can replace these with icons later if needed
-        ttk.Button(header_frame, text="⚙").pack(side=tk.RIGHT, padx=2) # General Settings
-        ttk.Checkbutton(header_frame, text="Bluetooth").pack(side=tk.RIGHT, padx=2) # Bluetooth toggle - consider if needed in header
-        ttk.Checkbutton(header_frame, text="HDMI").pack(side=tk.RIGHT, padx=2) # HDMI toggle - consider if needed in header
-        ttk.Button(header_frame, text="UITZETTEN", style='TachtigRed.TButton').pack(side=tk.RIGHT, padx=2) # Detection Settings (based on your v0_gui)
-        # Add other icons/buttons from your image if desired
+        ttk.Button(header_frame, text="UITZETTEN", style='Red.TButton').pack(side=tk.RIGHT, padx=2) 
+        ttk.Button(header_frame, text="START DETECTIE", style='Green.TButton').pack(side=tk.RIGHT, padx=2) 
 
     def create_main_content(self):
-        # This method will create the main area with live feed, detections, and charts
+        # Main area with live feed, detections, and charts
         main_frame = ttk.Frame(self)
         main_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
-        # Create left and right frames within the main frame
-        # Pack right frame first to see if it influences space allocation
+        # Left and right frames within the main frame
+        # Right frame first to see if it influences space allocation
         right_frame = ttk.Frame(main_frame)
-        right_frame.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, padx=5) # Add some padding
+        right_frame.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, padx=5) 
 
         left_frame = ttk.Frame(main_frame)
-        left_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5) # Add some padding between left and right
+        left_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5) 
 
-        # Now we need methods to populate these frames
+        # Methods to populate these frames
         self.create_left_panel(left_frame)
         self.create_right_panel(right_frame)
 
@@ -155,12 +156,10 @@ class vespcvGUI(tk.Tk):
             ttk.Label(placeholder_frame, text=f"Detection {i+1}", anchor="center").pack(expand=True, fill=tk.BOTH)
 
     def create_log_display(self, parent_frame):
-        # This method will create the log display area
+        # Create the log display area
         # Using ScrolledText for a text area with a built-in scrollbar
         self.log_text = scrolledtext.ScrolledText(parent_frame, state='disabled', wrap='word') # Use state='disabled' to make it read-only
         self.log_text.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
-
-        # We will need a mechanism to insert log messages into self.log_text later
 
     def create_control_frame(self):
         # This method will create the control buttons (Start/Stop Detection)
@@ -169,8 +168,35 @@ class vespcvGUI(tk.Tk):
 
         # Add Start and Stop Detection buttons
         # Removed Start Detection button as per PRD for auto-start on boot
-        ttk.Button(control_frame, text="Start Detection").pack(side=tk.LEFT, padx=5) # Kept for debugging
-        ttk.Button(control_frame, text="Stop Detection").pack(side=tk.LEFT, padx=5)
+        # ttk.Button(control_frame, text="Start Detection").pack(side=tk.LEFT, padx=5) # Kept for debugging
+        # ttk.Button(control_frame, text="Stop Detection").pack(side=tk.LEFT, padx=5)
+
+    def start_detection(self):
+        """Start the detection process"""
+        if not self.is_detecting:
+            self.is_detecting = True
+            self.detection_thread = threading.Thread(target=self.detection_loop)
+            self.detection_thread.daemon = True
+            self.detection_thread.start()
+            print("Detection started")  # Replace this with proper logging later
+
+    def stop_detection(self):
+        """Stop the detection process"""
+        self.is_detecting = False
+        if self.detection_thread:
+            self.detection_thread.join(timeout=1)
+        print("Detection stopped")  # Replace this with proper logging later
+
+    def detection_loop(self):
+        """Main detection loop running in a separate thread"""
+        while self.is_detecting:
+            try:
+                # TODO: Add actual detection code here
+                print("Detection cycle")  # Placeholder
+                time.sleep(15)  # 15 second interval
+            except Exception as e:
+                print(f"Error in detection loop: {e}")
+                time.sleep(1)
 
     # We will add a method for the log frame later
 
