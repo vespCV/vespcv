@@ -43,7 +43,7 @@ def capture_image():
         config = load_config()  # Loads the config dict
         images_folder = config.get('images_folder', '/home/vcv/vespcv/data/images')  # Update to your path
         image_path = os.path.join(images_folder, "image_for_detection.jpg")
-        print(f"Attempting to save image to: {image_path}")  # Debug print
+        logger.debug(f"Attempting to save image to: {image_path}")
         subprocess.run([ 
             "libcamera-still",
             "-o", image_path,  # Save the image_for_detection.jpg
