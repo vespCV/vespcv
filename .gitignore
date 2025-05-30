@@ -22,6 +22,6 @@ venv/
 # Cursor docs
 # .cursor/
 .cursorignore
-PLANNING.md
-TASK.md
+# PLANNING.md
+# TASK.md
 
