@@ -15,36 +15,38 @@ Version 0.3
 ## 1. Introduction
 
 ### 1.1 Purpose
-This document outlines the functional and non-functional requirements for vespCV, an application designed to detect Asian hornets (Vespa velutina) using a Raspberry Pi 4, a Camera Module 3, and a YOLOv11s object detection model.
+The goal is to create a system specifically designed for the detection of Vespa velutina (Asian-/Yellowlegged hornets) in areas where this hornet is an invasive species. This detector aims to provide a solution to the increasing challenges posed by this hornet to the honeybee population due to its aggressive predation behavior. 
 
 ### 1.2 Target Audience
 This document is intended for the development team, testers, and other stakeholders involved in the development of vespCV.
 
 ### 1.3 Context
-The Asian hornet is an invasive species posing a threat to biodiversity and the honeybee population. Early detection is crucial for effective control. vespCV offers an automated solution for this detection.
+In Europe, the Asian hornet is an invasive species posing a threat to the honeybee population. Effects on other insects and subsequent birds and pollination is not clear a decade after introduction of the first insect in France. Early detection is crucial for effective control. vespCV offers an automated solution for this detection. In the spring it can be a selective trap, not harming other insects such as the European hornet. In the summer it can aid the detection of workers that can subsequently be equiped with a microtransmitter to track and destruct the nest.
 
 ### 1.4 Operation
-Camera input → AI detection → storage/logging
+Camera input → AI detection → storage + logging
+                            → queen trap
+                            → catch hornet → transmitter
+                            → research
 
 ## 2. Goals
 
-### 2.1 Primary Goals (Proof of Concept)
-- Detection of Asian hornets in camera feed with a 15 second interval and confidence of 80% or higher
-- Local deployment on a cost-effective Raspberry Pi 4
-- Simple installation and configuration
-- Storage of detection images and log records
+### 2.1 Main objective
+- To develop and implement a robust and reliable computer vision system for the real-time detection of Vespa velutina.
 
-### 2.2 Secondary Goals (User Application)
-- User-friendly graphical interface (GUI) for monitoring and configuration
-- Ability to export detection data
-- Automation of application startup
-- Gracefull shutdown (GPIO pins and pushbutton)
+### 2.2 Sub-objectives
+- User-friendly system by beekeepers, voluntiers, citizens.
+- Retrain with captured images to minimizal false positives en improve detection accuracy under various environmental conditions.
+- Provide a log file, trigger for action of a electronic harp, sending an email upon detection.
+- Design a scalable system that can be applied in various contexts.
+- Sending training data to makers
+
 
 ## 3. User Stories
 
-1. As a beekeeper, I want to place vespCV at my apiary so that I am warned early of the presence of Asian hornets, allowing me to take swift action.
+1. As a beekeeper, I want to place vespCV at my apiary so that I am warned early of the presence of Asian hornets, and automatically activates a electric harp to protect the bees.
 
-2. As a volunteer monitoring invasive species, I want an affordable and easy-to-deploy solution to map the spread of the Asian hornet in my region.
+2. As a volunteer monitoring invasive species, I want to receive a almost realtime mail with the captured image to send it to 'waarnemingen.nl'.
 
 3. As a researcher, I want access to logged detection data and images to analyze the behavior patterns of Asian hornets.
 
@@ -53,17 +55,17 @@ Camera input → AI detection → storage/logging
 ### 4.1 Detection
 | ID | Requirement | Description |
 |----|-------------|-------------|
-| FR01 | Camera Processing | The application shall be able to process live video streams from the Raspberry Pi Camera Module 3. |
-| FR02 | Model Usage | The application must use the YOLOv11s model to perform object detection on the video streams. |
-| FR03 | Detection Accuracy | The application must accurately detect Asian hornets in the video streams. |
-| FR04 | Detection Display | Upon detection, the application shall provide a bounding box and a label ("Asian hornet") for the detected object. |
+| FR01 | Camera Processing | The application shall be able to process captures images from the Raspberry Pi Camera Module 3. |
+| FR02 | Model Usage | The application uses the YOLOv11s model to perform object detection on the captured images. |
+| FR03 | Detection Accuracy | The application must accurately detect Asian hornets. |
+| FR04 | Detection Display | Upon detection, the application shall provide a bounding box and a label ("vvel") for the detected object. Also bees, European hornets and wasps are included in the trainingset and detected |
 | FR05 | Confidence Threshold | The application must use a threshold value (confidence score) to filter detections. This threshold value must be configurable. |
 
 ### 4.2 Storage
 | ID | Requirement | Description |
 |----|-------------|-------------|
-| FR06 | Image Storage | Upon detection, the application shall save an image of the frame containing the detected hornet in the data/images/ directory. The filename must include the species, confidence score, and timestamp. |
-| FR07 | Logging | The application shall log detection information (species, confidence score, timestamp, bounding box location) in a CSV file in the data/logs/ directory. |
+| FR06 | Image Storage | Upon detection, the application shall save an image of the frame containing the detected hornet in the data/images/ directory. The filename must include the species, confidence score, and date- and timestamp. |
+| FR07 | Logging | The application shall log detection information of detected species, confidence score, timestamp, bounding box location (for retraining purposes), optional location data, system values (cpu temp, cpu usage) and errors in .log files in the data/logs/ directory. |
 
 ### 4.3 Configuration
 | ID | Requirement | Description |
@@ -71,22 +73,22 @@ Camera input → AI detection → storage/logging
 | FR08 | Config Loading | The application must load configuration settings from files in the config/ directory. |
 | FR09 | Configurable Parameters | The following parameters must be configurable:
 - Detection threshold value (confidence score)
-- Storage location for images
-- Storage location for log files
-- Any model-specific parameters |
+- E-mail adres
+- Download location
+- GPIO activation
 
-### 4.4 User Interface (GUI - Optional)
+### 4.4 User Interface
 | ID | Requirement | Description |
 |----|-------------|-------------|
 | FR10 | GUI Implementation | The application, if implemented, shall offer a graphical interface (GUI). |
-| FR11 | Live Feed Display | The GUI must display a live feed from the camera with bounding boxes around detected Asian hornets. |
+| FR11 | Most recent captured image | The GUI must display the latest captured and infered image with bounding boxes around detected species. |
 | FR12 | Configuration Interface | The GUI must allow modification of the configuration parameters (as mentioned in FR09). |
-| FR13 | Detection Display | The GUI must display the 4 detections with the highest confidence from the current session (with image and log information). |
+| FR13 | Detection Display | The GUI must display the 4 detections with the highest confidence from the current session (with image and log information) and download option. |
 
-### 4.5 Autostart
+### 4.5 Autostart and gracefull shutdown
 | ID | Requirement | Description |
 |----|-------------|-------------|
-| FR14 | Boot Configuration | The application must be configurable to start automatically upon Raspberry Pi boot. |
+| FR14 | Boot Configuration | The application must be configurable to start automatically upon Raspberry Pi boot and stop with in button (for headless application). |
 
 ### 4.6 Error Handling
 | ID | Requirement | Description |
@@ -158,12 +160,9 @@ Camera input → AI detection → storage/logging
 
 ## 8. Future Improvements (Backlog)
 
-1. Implementation of the optional GUI (FR10-FR13)
-2. Ability to send detection notifications (e.g., via email or another service)
-3. Triggering of a connected mechanical defense or capture mechanism upon detection (such as an electrically operated harp)
-4. Integration with GPS modules for geotagging detections
-5. Support for training the model with new data
-6. Implementation of more advanced analysis of detection patterns
+1. Integration with GPS modules for geotagging detections
+2. Sending training to the makers
+3. Implementation of more advanced analysis of detection patterns (combination with sound)
 
 ## 9. Log Formats and Details
 
@@ -182,4 +181,4 @@ Camera input → AI detection → storage/logging
 - **Camera Status**: Any error messages or status updates from the camera (e.g., if the camera is not working correctly or has timed out)
 - **Available Memory**: Regularly logging the available RAM memory on the Raspberry Pi can help in debugging performance issues
 - **CPU Load**: Regularly logging the CPU load can also provide insight into the application's performance
-- **Frame Rate**: If possible, log the frame rate of the processed video stream. This can help in assessing real-time performance
+-**camera focus** if autofocus is used
