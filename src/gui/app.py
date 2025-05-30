@@ -13,6 +13,7 @@ import logging
 from threading import Lock
 from typing import Optional, List, Dict
 import numpy as np
+from src.core.detector import DetectionController
 
 class ImageHandler:
     def __init__(self, logger):
@@ -87,6 +88,10 @@ class vespcvGUI(tk.Tk):
 
         # Initialize image handler
         self.image_handler = ImageHandler(self.logger)
+
+        # Initialize DetectionController
+        self.detector = DetectionController(self.handle_detection_result)
+        self.detector.start()  # Start detection on launch
 
         self.show_captured_image()
 
@@ -264,20 +269,10 @@ class vespcvGUI(tk.Tk):
         control_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
 
     def start_detection(self):
-        """Start the detection process"""
-        if not self.is_detecting:
-            self.is_detecting = True
-            self.detection_thread = threading.Thread(target=self.detection_loop)
-            self.detection_thread.daemon = True
-            self.detection_thread.start()
-            print("Detection stopped")  # Replace this with proper logging later
+        self.detector.start()
 
     def stop_detection(self):
-        """Stop the detection process"""
-        self.is_detecting = False
-        if self.detection_thread:
-            self.detection_thread.join(timeout=1)
-        print("Detection stopped")  # Replace this with proper logging later
+        self.detector.stop()
 
     def inference_loop(self, model, config):
         while True:
@@ -366,21 +361,19 @@ class vespcvGUI(tk.Tk):
     def update_live_feed(self, image_path: str) -> None:
         """Update the live feed canvas with the new image."""
         with self.image_lock:
-            try:
-                img = Image.open(image_path)
-                img.thumbnail((400, 300))
-                photo = ImageTk.PhotoImage(img)
-
-                # Clear the canvas and display the new image
-                self.live_feed_canvas.delete("all")  # Clear the canvas
-                self.live_feed_canvas.create_image(0, 0, anchor=tk.NW, image=photo)  # Place the image in the canvas
-                self.live_feed_canvas.image = photo  # Keep a reference to avoid garbage collection
-                
-                # Force the GUI to update
-                self.update()  # Ensure the GUI refreshes to show the new image
-            except Exception as e:
-                self.logger.error(f"Failed to update live feed: {e}")
-                # Show user-friendly error message
+            for attempt in range(3):
+                try:
+                    img = Image.open(image_path)
+                    img.thumbnail((400, 300))
+                    photo = ImageTk.PhotoImage(img)
+                    self.live_feed_canvas.delete("all")
+                    self.live_feed_canvas.create_image(0, 0, anchor=tk.NW, image=photo)
+                    self.live_feed_canvas.image = photo
+                    self.update()
+                    break  # Success!
+                except Exception as e:
+                    self.logger.error(f"Failed to update live feed (attempt {attempt+1}): {e}")
+                    time.sleep(0.2)  # Wait a bit and try again
 
     def show_captured_image(self):
         image_path = '/home/vcv/vespcv/data/images/image_after_inference.jpg'
@@ -393,6 +386,59 @@ class vespcvGUI(tk.Tk):
     def __del__(self):
         for handler in self._cleanup_handlers:
             handler()
+
+    def handle_detection_result(self, result):
+        # Use self.after() to update GUI elements safely
+        self.after(0, self.update_gui_with_result, result)
+
+    def update_gui_with_result(self, result):
+        """
+        Update the GUI with the latest detection result.
+        :param result: dict with keys 'image_path' and 'detection' (class, confidence, timestamp)
+        """
+        # 1. Update live feed
+        image_path = result.get("image_path")
+        if image_path and os.path.exists(image_path):
+            self.update_live_feed(image_path)
+
+        # 2. Update logs
+        detection = result.get("detection", {})
+        log_entry = (
+            f"{detection.get('timestamp', '')} - "
+            f"Class: {detection.get('class', '')}, "
+            f"Confidence: {detection.get('confidence', '')}\n"
+        )
+        self.log_text.config(state='normal')
+        self.log_text.insert('end', log_entry)
+        self.log_text.see('end')
+        self.log_text.config(state='disabled')
+
+        # 3. Update charts (example: increment detection count)
+        detected_class = detection.get('class')
+        if detected_class:
+            # Update your internal data structure for the bar chart
+            # For example, if you have a dict: self.detection_counts
+            if not hasattr(self, 'detection_counts'):
+                self.detection_counts = {}
+            self.detection_counts[detected_class] = self.detection_counts.get(detected_class, 0) + 1
+
+            # Redraw the bar chart
+            self.redraw_insect_count_chart()
+
+            # Update timeline data (if you have a structure for it)
+            if not hasattr(self, 'detection_timeline'):
+                self.detection_timeline = []
+            self.detection_timeline.append((detection.get('timestamp'), detected_class))
+            self.redraw_detection_timeline_chart()
+
+    def redraw_insect_count_chart(self):
+        # Example: clear and redraw the bar chart with updated self.detection_counts
+        # (You may need to store the Figure and Axes as self attributes)
+        pass
+
+    def redraw_detection_timeline_chart(self):
+        # Example: clear and redraw the timeline chart with updated self.detection_timeline
+        pass
 
 if __name__ == "__main__":
     app = vespcvGUI()

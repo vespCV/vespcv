@@ -9,6 +9,7 @@ import time
 import os
 import cv2 # OpenCV
 import subprocess
+import threading
 
 from src.utils.detection_utils import capture_image
 from src.utils.image_utils import save_annotated_image
@@ -138,6 +139,100 @@ def inference_loop(model, config):
             logger.error("Error during inference: %s", e)
 
         time.sleep(config['capture_interval'])
+
+class DetectionController:
+    def __init__(self, result_callback):
+        self._thread = None
+        self._stop_event = threading.Event()
+        self._pause_event = threading.Event()
+        self.result_callback = result_callback  # Function to send results to GUI
+
+        # Load config and model once
+        self.config = load_config()
+        self.model = create_model(self.config['model_path'])
+
+    def start(self):
+        if self._thread is None or not self._thread.is_alive():
+            self._stop_event.clear()
+            self._pause_event.clear()
+            self._thread = threading.Thread(target=self._detection_loop, daemon=True)
+            self._thread.start()
+        else:
+            self._pause_event.clear()  # Resume if paused
+
+    def stop(self):
+        self._pause_event.set()  # Pause detection
+
+    def is_running(self):
+        return self._thread is not None and self._thread.is_alive() and not self._pause_event.is_set()
+
+    def _detection_loop(self):
+        while not self._stop_event.is_set():
+            if self._pause_event.is_set():
+                time.sleep(0.1)
+                continue
+
+            try:
+                # 1. Capture image
+                image_path = capture_image()
+                img = cv2.imread(image_path)
+
+                # 2. Run YOLO inference
+                results = self.model(img)[0]
+
+                # 3. Process results
+                detected_classes = {}
+                class_3_detected = False
+                conf = 0.0  # Default confidence
+
+                for result in results.boxes.data.tolist():
+                    x1, y1, x2, y2, conf, cls = result[:6]
+                    if conf > self.config.get('conf_threshold', 0.8):
+                        class_name = self.config['class_names'][int(cls)]
+                        detected_classes[int(cls)] = detected_classes.get(int(cls), 0) + 1
+                        if int(cls) == 3:
+                            class_3_detected = True
+
+                # 4. Determine filename and save image
+                if class_3_detected:
+                    final_class_name = "vvel"
+                else:
+                    most_detected_class = max(detected_classes, key=detected_classes.get, default=None)
+                    if most_detected_class is not None:
+                        final_class_name = self.config['class_names'][most_detected_class]
+                    else:
+                        continue  # No detection, skip
+
+                confidence_score = f"{conf:.2f}"
+                timestamp = time.strftime("%Y%m%d-%H%M%S")
+                new_image_name = f"{final_class_name}-{confidence_score}-{timestamp}.jpg"
+                new_image_path = os.path.join('data/images', new_image_name)
+                cv2.imwrite(new_image_path, img)
+
+                # Save image after inference (for live feed)
+                after_inference_image_path = os.path.join('data/images', 'image_after_inference.jpg')
+                cv2.imwrite(after_inference_image_path, img)
+
+                # 5. Send result to GUI
+                result = {
+                    "image_path": after_inference_image_path,
+                    "detection": {
+                        "class": final_class_name,
+                        "confidence": confidence_score,
+                        "timestamp": timestamp
+                    }
+                }
+                self.result_callback(result)
+
+            except Exception as e:
+                logger.error("Error during detection: %s", e)
+
+            time.sleep(self.config['capture_interval'])
+
+    def shutdown(self):
+        self._stop_event.set()
+        if self._thread:
+            self._thread.join()
 
 def main():
     """Main function to run the detector."""
