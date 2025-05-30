@@ -74,11 +74,7 @@ Camera input → AI detection → storage + logging
 | ID | Requirement | Description |
 |----|-------------|-------------|
 | FR08 | Config Loading | The application must load configuration settings from files in the config/ directory. |
-| FR09 | Configurable Parameters | The following parameters must be configurable:
-- Detection threshold value (confidence score)
-- E-mail adres
-- Download location
-- GPIO activation
+| FR09 | Configurable Parameters | The following parameters must be configurable: - Detection threshold value (confidence score), - E-mail adres, - Download location, - GPIO activation
 
 ### 4.4 User Interface
 | ID | Requirement | Description |
