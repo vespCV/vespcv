@@ -25,8 +25,11 @@ In Europe, the Asian hornet is an invasive species posing a threat to the honeyb
 
 ### 1.4 Operation
 Camera input → AI detection → storage + logging
+                            
                             → queen trap
+                            
                             → catch hornet → transmitter
+                            
                             → research
 
 ## 2. Goals
