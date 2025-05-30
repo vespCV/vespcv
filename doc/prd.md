@@ -38,8 +38,8 @@ Camera input → AI detection → storage + logging
 - To develop and implement a robust and reliable computer vision system for the real-time detection of Vespa velutina.
 
 ### 2.2 Sub-objectives
-- User-friendly system by beekeepers, voluntiers, citizens.
-- Retrain with captured images to minimizal false positives en improve detection accuracy under various environmental conditions.
+- User-friendly system for beekeepers, voluntiers, citizens.
+- Retrain with captured images to minimize false positives en improve detection accuracy under various environmental conditions.
 - Provide a log file, trigger for action of a electronic harp, sending an email upon detection.
 - Design a scalable system that can be applied in various contexts.
 - Sending training data to makers
@@ -61,7 +61,7 @@ Camera input → AI detection → storage + logging
 | FR01 | Camera Processing | The application shall be able to process captures images from the Raspberry Pi Camera Module 3. |
 | FR02 | Model Usage | The application uses the YOLOv11s model to perform object detection on the captured images. |
 | FR03 | Detection Accuracy | The application must accurately detect Asian hornets. |
-| FR04 | Detection Display | Upon detection, the application shall provide a bounding box and a label ("vvel") for the detected object. Also bees, European hornets and wasps are included in the trainingset and detected |
+| FR04 | Detection Display | Upon detection, the application shall provide a bounding box and a label ("vvel") for the detected object. Additionally, bees, European hornets, and wasps are included in the training set and can be detected. |
 | FR05 | Confidence Threshold | The application must use a threshold value (confidence score) to filter detections. This threshold value must be configurable. |
 
 ### 4.2 Storage
@@ -103,7 +103,7 @@ Camera input → AI detection → storage + logging
 ### 5.1 Performance
 | ID | Requirement | Description |
 |----|-------------|-------------|
-| NFR01 | Real-time Detection | Detection must occur in near real-time (minimal delay between event and detection). |
+| NFR01 | Real-time Detection | Detection must occur in near real-time (minimal delay between the event and detection). |
 | NFR02 | Resource Usage | The application must not excessively burden the Raspberry Pi 4 system resources (<70% CPU over a 5-minute average). |
 
 ### 5.2 Reliability
@@ -126,7 +126,7 @@ Camera input → AI detection → storage + logging
 ### 5.5 Scalability (Future)
 | ID | Requirement | Description |
 |----|-------------|-------------|
-| NFR08 | Cloud Integration | The possibility of integration with cloud services or other platforms may be considered in the future. |
+| NFR08 | Cloud Integration | The possibility of integration with cloud services or other platforms could be considered in the future. |
 
 ## 6. Technical Requirements
 
