@@ -14,26 +14,9 @@ import threading
 from src.utils.detection_utils import capture_image
 from src.utils.image_utils import save_annotated_image
 from src.core.logger import start_temperature_logging, logger, configure_logger, get_cpu_temperature
+from src.core.config_loader import load_config
 
-def load_config(config_path='config/config.yaml'):
-    """Load the configuration from the specified YAML file."""
-    try:
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-    except FileNotFoundError as e:
-        logger.error("Error: '%s' file not found.", config_path)
-        raise e
-    except yaml.YAMLError as e:
-        logger.error("Error: Failed to parse the YAML config file.")
-        raise e
 
-    if 'model_path' not in config:
-        raise KeyError("Error: 'model_path' key is missing in the config file.")
-    
-    if 'class_names' not in config:
-        raise KeyError("Error: 'class_names' key is missing in the config file.")
-
-    return config
 
 def create_model(model_path):
     """Load the YOLO model from the given model path"""
