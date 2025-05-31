@@ -105,11 +105,11 @@ class DetectionController:
             if not detections:
                 return None
 
-            # Save annotated image
+            # Save annotated image for GUI
             annotated_path = self._save_annotated_image(img, results)
             
             # Archive image if detection is valid
-            if detections["class"] != "no_detection":
+            if detections.get("should_archive"):
                 class_name = detections["class"]
                 confidence = detections["confidence"]
                 timestamp = detections["timestamp"]
@@ -131,36 +131,38 @@ class DetectionController:
         """Process detection results and return detection info."""
         detected_classes = {}
         class_3_detected = False
+        class_3_conf = 0.0
         max_conf = 0.0
+        max_conf_class = None
 
         for result in results.boxes.data.tolist():
             x1, y1, x2, y2, conf, cls = result[:6]
             if conf > self.config['conf_threshold']:
-                # Draw bounding box
-                cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-                
-                # Get class info
                 class_id = int(cls)
                 class_name = self.config['class_names'][class_id]
-                detected_classes[class_id] = detected_classes.get(class_id, 0) + 1
+                detected_classes[class_id] = max(detected_classes.get(class_id, 0), conf)  # store max conf per class
+
+                if class_id == 3 and conf > class_3_conf:
+                    class_3_detected = True
+                    class_3_conf = conf
+
+                if conf > max_conf:
+                    max_conf = conf
+                    max_conf_class = class_id
+
+                # Draw bounding box
+                cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
                 
                 # Add label
                 label = f"{class_name} {conf:.2f}"
                 cv2.putText(img, label, (int(x1), int(y1) - 10),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                # Track class 3 and max confidence
-                if class_id == 3:
-                    class_3_detected = True
-                max_conf = max(max_conf, conf)
-
-        # Determine final class and confidence
-        if detected_classes:
-            if class_3_detected:
-                final_class = "vvel"
-            else:
-                most_detected = max(detected_classes.items(), key=lambda x: x[1])
-                final_class = self.config['class_names'][most_detected[0]]
+        if class_3_detected:
+            final_class = "vvel"
+            confidence = f"{class_3_conf:.2f}"
+        elif max_conf_class is not None:
+            final_class = self.config['class_names'][max_conf_class]
             confidence = f"{max_conf:.2f}"
         else:
             final_class = "no_detection"
@@ -169,7 +171,8 @@ class DetectionController:
         return {
             "class": final_class,
             "confidence": confidence,
-            "timestamp": time.strftime("%Y%m%d-%H%M%S")
+            "timestamp": time.strftime("%Y%m%d-%H%M%S"),
+            "should_archive": final_class != "no_detection"
         }
 
     def _save_annotated_image(self, img, results):
