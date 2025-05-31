@@ -10,7 +10,7 @@ import threading
 import cv2
 from ultralytics import YOLO
 
-from src.utils.detection_utils import capture_image, save_annotated_image
+from src.utils.detection_utils import capture_image, save_annotated_image, save_original_image, save_archived_image
 from src.core.logger import logger
 
 class DetectionController:
@@ -105,21 +105,18 @@ class DetectionController:
             if not detections:
                 return None
 
+            # Save original image with detection metadata
+            original_path = save_original_image(self.config, detections)
+
             # Save annotated image for GUI
             annotated_path = save_annotated_image(img, results, self.config)
             
             # Archive image if detection is valid
-            if detections.get("should_archive"):
-                class_name = detections["class"]
-                confidence = detections["confidence"]
-                timestamp = detections["timestamp"]
-                archive_filename = f"{class_name}-{confidence}-{timestamp}.jpg"
-                archive_path = os.path.join(self.config['images_folder'], archive_filename)
-                cv2.imwrite(archive_path, img)
-                logger.debug(f"Archived detection image: {archive_path}")
+            archive_path = save_archived_image(img, detections, self.config)
 
             return {
-                "image_path": annotated_path,
+                "annotated_path": annotated_path,
+                "original_path": original_path,
                 "detection": detections
             }
 

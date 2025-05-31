@@ -288,11 +288,11 @@ class vespcvGUI(tk.Tk):
     def update_gui_with_result(self, result):
         """Update the GUI with the latest detection result."""
         try:
-            # Update live feed
-            image_path = result.get("image_path")
-            if image_path and os.path.exists(image_path):
-                self.latest_image_path = image_path
-                self.update_live_feed(image_path)
+            # Update live feed with annotated image
+            annotated_path = result.get("annotated_path")
+            if annotated_path and os.path.exists(annotated_path):
+                self.latest_image_path = annotated_path
+                self.update_live_feed(annotated_path)
 
             # Update logs
             detection = result.get("detection", {})

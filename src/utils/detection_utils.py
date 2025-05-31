@@ -7,6 +7,7 @@ import subprocess
 import cv2
 from src.core.logger import logger
 from src.core.config_loader import load_config
+import time
 
 def capture_image():
     """Capture an image using libcamera-still and save it to the configured path.
@@ -52,7 +53,7 @@ def capture_image():
         raise
 
 def save_annotated_image(image, results, config):
-    """Save an annotated image with bounding boxes and labels.
+    """Save the annotated image.
     
     Args:
         image: The image to annotate
@@ -64,6 +65,7 @@ def save_annotated_image(image, results, config):
     """
     try:
         if results:
+            # Create and save the annotated version
             annotated_image = image.copy()
             class_names = results.names
 
@@ -86,14 +88,83 @@ def save_annotated_image(image, results, config):
                     cv2.putText(annotated_image, label, (x1, int(text_y)), 
                               cv2.FONT_HERSHEY_SIMPLEX, 15.0, (255, 255, 255), 15)
 
-            # Save the annotated image
-            output_path = os.path.join(config.get('images_folder'), 'annotated_image.jpg')
+            # Save the annotated image with the consistent name
+            output_path = os.path.join(config.get('images_folder'), 'image_after_inference.jpg')
             cv2.imwrite(output_path, annotated_image)
             logger.debug(f"Annotated image saved to {output_path}")
+
             return output_path
 
     except Exception as e:
-        logger.error(f"Error saving annotated image: {e}")
+        logger.error(f"Error saving images: {e}")
+        return None
+
+def save_original_image(config, detections=None):
+    """Save the original image with detection metadata in the filename.
+    
+    Args:
+        config: Configuration dictionary
+        detections: Dictionary containing detection information (optional)
+        
+    Returns:
+        str: Path to the saved original image
+    """
+    try:
+        # Load configuration
+        images_folder = config.get('images_folder')
+        original_image_path = os.path.join(images_folder, 'image_for_detection.jpg')
+        
+        # Check if the original image exists
+        if not os.path.exists(original_image_path):
+            logger.error(f"Original image not found: {original_image_path}")
+            return None
+        
+        # If we have detection metadata, use it for the filename
+        if detections and detections.get("should_archive"):
+            class_name = detections["class"]
+            confidence = detections["confidence"]
+            timestamp = detections["timestamp"]
+            new_filename = f"_{class_name}-{confidence}-{timestamp}.jpg"
+        else:
+            # Fallback to the old behavior if no detection metadata
+            new_filename = f"_{os.path.basename(original_image_path)}"
+            
+        new_image_path = os.path.join(images_folder, new_filename)
+        
+        # Save the original image with the new filename
+        cv2.imwrite(new_image_path, cv2.imread(original_image_path))
+        logger.debug(f"Original image saved to {new_image_path}")
+
+        return new_image_path
+
+    except Exception as e:
+        logger.error(f"Error saving original image: {e}")
+        return None
+
+def save_archived_image(image, detections, config):
+    """Save an archived image with detection information in the filename.
+    
+    Args:
+        image: The image to save
+        detections: Dictionary containing detection information
+        config: Configuration dictionary
+        
+    Returns:
+        str: Path to the saved archived image
+    """
+    try:
+        if detections.get("should_archive"):
+            class_name = detections["class"]
+            confidence = detections["confidence"]
+            timestamp = detections["timestamp"]
+            archive_filename = f"{class_name}-{confidence}-{timestamp}.jpg"
+            archive_path = os.path.join(config['images_folder'], archive_filename)
+            cv2.imwrite(archive_path, image)
+            logger.debug(f"Archived detection image: {archive_path}")
+            return archive_path
+        return None
+    except Exception as e:
+        logger.error(f"Error saving archived image: {e}")
         return None
 
 if __name__ == "__main__":
