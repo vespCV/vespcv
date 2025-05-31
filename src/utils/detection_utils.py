@@ -1,37 +1,59 @@
-import yaml
+"""
+Utility functions for image capture and detection.
+"""
+
 import os
 import subprocess
-
+from src.core.logger import logger
 from src.core.config_loader import load_config
-
 
 def capture_image():
     """Capture an image using libcamera-still and save it to the configured path.
     
     Returns:
         str: Path to the captured image
+        
+    Raises:
+        FileNotFoundError: If the images folder doesn't exist
+        subprocess.SubprocessError: If the camera capture fails
     """
     try:
-        config = load_config()  # Loads the config dict
-        images_folder = config.get('images_folder', '/default/path')  # Safely get the value, with a fallback
+        # Load configuration
+        config = load_config()
+        images_folder = config.get('images_folder')
+        
+        # Ensure images folder exists
+        os.makedirs(images_folder, exist_ok=True)
+        
+        # Set up image path
         image_path = os.path.join(images_folder, 'image_for_detection.jpg')
-        print(f"Attempting to save image to: {image_path}")  # Debug print
-        subprocess.run([ 
+        logger.debug(f"Capturing image to: {image_path}")
+        
+        # Capture image using libcamera-still
+        subprocess.run([
             "libcamera-still",
-            "-o", image_path,  # Save the image_for_detection.jpg
+            "-o", image_path,
             "--width", "4656",
             "--height", "3496"
-        ])
+        ], check=True)
+        
+        logger.debug(f"Image captured successfully: {image_path}")
         return image_path
-    except KeyError as e:
-        print(f"Error: Missing key in config: {e}")
-        raise e  # Or handle it appropriately
+        
+    except FileNotFoundError as e:
+        logger.error(f"Images folder not found: {e}")
+        raise
+    except subprocess.SubprocessError as e:
+        logger.error(f"Failed to capture image: {e}")
+        raise
     except Exception as e:
-        print(f"Error: {e}")
-        raise e
-
+        logger.error(f"Unexpected error during image capture: {e}")
+        raise
 
 if __name__ == "__main__":
-    print("Starting image capture...")  # Debug print
-    result = capture_image()
-    print(f"Image captured at: {result}")  # Debug print
+    # Test image capture
+    try:
+        image_path = capture_image()
+        print(f"Test capture successful: {image_path}")
+    except Exception as e:
+        print(f"Test capture failed: {e}")

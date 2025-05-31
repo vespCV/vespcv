@@ -54,8 +54,9 @@ class ImageHandler:
             return None
 
 class vespcvGUI(tk.Tk):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
+        self.config = config
         self.title("Aziatisch-/Geelpotige Hoornaar Detector")
         self.geometry("1024x768")
         self.configure(bg="#FFF8E1") # Light amber background
@@ -66,34 +67,32 @@ class vespcvGUI(tk.Tk):
 
         # Configure styles for custom buttons
         style = ttk.Style()
-        style.configure('Red.TButton', background='red', foreground='black') # Config style for power off button
-        style.configure('Orange.TButton', background='orange', foreground='black') # Config style for stop detection button
-        style.configure('Green.TButton', background='green', foreground='black') # Config style for start detection buttong
+        style.configure('Red.TButton', background='red', foreground='black')
+        style.configure('Orange.TButton', background='orange', foreground='black')
+        style.configure('Green.TButton', background='green', foreground='black')
 
-        # Call methods to create different parts of the GUI
+        # Initialize components
+        self._init_components()
+        
+        # Initialize detection controller
+        self.detector = DetectionController(self.handle_detection_result)
+        
+        # Start detection on launch
+        self.start_detection()
+
+    def _init_components(self):
+        """Initialize all GUI components."""
+        # Initialize image queue and handlers
+        self.image_queue = queue.Queue()
+        self.logger = logging.getLogger(__name__)
+        self._cleanup_handlers = []
+        self.image_lock = Lock()
+        self.image_handler = ImageHandler(self.logger)
+
+        # Create GUI elements
         self.create_header()
         self.create_main_content()
         self.create_control_frame()
-        # We will add log frame later
-
-        # Initialize image queue
-        self.image_queue = queue.Queue()
-
-        # Initialize logger
-        self.logger = logging.getLogger(__name__)
-
-        self._cleanup_handlers = []
-
-        self.image_lock = Lock()
-
-        # Initialize image handler
-        self.image_handler = ImageHandler(self.logger)
-
-        # Initialize DetectionController
-        self.detector = DetectionController(self.handle_detection_result)
-        self.detector.start()  # Start detection on launch
-
-        self.show_captured_image()
 
     def create_header(self):
         # This method will create the header section
@@ -269,94 +268,66 @@ class vespcvGUI(tk.Tk):
         control_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
 
     def start_detection(self):
-        self.detector.start()
+        """Start the detection process."""
+        if not self.is_detecting:
+            self.is_detecting = True
+            self.detector.start()
+            self.logger.info("Detection started")
 
     def stop_detection(self):
-        self.detector.stop()
+        """Stop the detection process."""
+        if self.is_detecting:
+            self.is_detecting = False
+            self.detector.stop()
+            self.logger.info("Detection stopped")
 
-    def inference_loop(self, model, config):
-        while True:
-            try:
-                image = self._capture_and_process_image(model, config)
-                self._save_detection_results(image, config)
-                self._update_ui(image)
-            except Exception as e:
-                self.logger.error(f"Inference error: {e}")
+    def handle_detection_result(self, result):
+        """Handle detection results from the detector."""
+        # Use self.after() to update GUI elements safely
+        self.after(0, self.update_gui_with_result, result)
 
-    def _capture_and_process_image(self, model, config):
-        image_path = capture_image()  # Ensure this function handles errors
-        print(f"Captured image path: {image_path}")  # Debug print
+    def update_gui_with_result(self, result):
+        """Update the GUI with the latest detection result."""
+        try:
+            # Update live feed
+            image_path = result.get("image_path")
+            if image_path and os.path.exists(image_path):
+                self.update_live_feed(image_path)
 
-        # Load the full image (no magnification)
-        img = cv2.imread(image_path)
+            # Update logs
+            detection = result.get("detection", {})
+            log_entry = (
+                f"{detection.get('timestamp', '')} - "
+                f"Class: {detection.get('class', '')}, "
+                f"Confidence: {detection.get('confidence', '')}\n"
+            )
+            self.log_text.config(state='normal')
+            self.log_text.insert('end', log_entry)
+            self.log_text.see('end')
+            self.log_text.config(state='disabled')
 
-        # Apply YOLO inference to the full image
-        results = model(img)[0]
+            # Update charts
+            self._update_charts(detection)
+        except Exception as e:
+            self.logger.error(f"Error updating GUI: {e}")
 
-        # Initialize variables to track detections
-        detected_classes = {}  # Dictionary to count occurrences of each class
-        class_3_detected = False  # Flag for class 3 detection
+    def _update_charts(self, detection):
+        """Update the charts with new detection data."""
+        detected_class = detection.get('class')
+        if detected_class:
+            # Update detection counts
+            if not hasattr(self, 'detection_counts'):
+                self.detection_counts = {}
+            self.detection_counts[detected_class] = self.detection_counts.get(detected_class, 0) + 1
 
-        # Check for class detection with high confidence
-        for result in results.boxes.data.tolist():  # Each detection in format [x1, y1, x2, y2, conf, class]
-            x1, y1, x2, y2, conf, cls = result[:6]
-            if conf > config.get('conf_threshold', 0.8):  # Use threshold from config
-                # Draw the bounding box
-                cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Green box
+            # Update timeline data
+            if not hasattr(self, 'detection_timeline'):
+                self.detection_timeline = []
+            self.detection_timeline.append((detection.get('timestamp'), detected_class))
 
-                # Get the class name from the config
-                class_name = config['class_names'][int(cls)]  # Assuming cls is an index
-                detected_classes[int(cls)] = detected_classes.get(int(cls), 0) + 1  # Count occurrences
-
-                # Optionally, add a label with class name and confidence
-                label = f"Class: {class_name}, Conf: {conf:.2f}"
-                cv2.putText(img, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-                # Check if class 3 is detected
-                if int(cls) == 3:
-                    class_3_detected = True
-
-        # Determine the class name for the filename
-        if class_3_detected:
-            final_class_name = "vvel"
-        else:
-            # Find the most detected species
-            most_detected_class = max(detected_classes, key=detected_classes.get, default=None)
-            if most_detected_class is not None:
-                final_class_name = config['class_names'][most_detected_class]  # Use the name of the most detected class
-            else:
-                print("No classes detected; image not saved.")  # Debug print
-                return None  # Skip saving the image if no classes are detected
-
-        # Format the filename with the determined class name and confidence score
-        confidence_score = f"{conf:.2f}"  # Use the last detected confidence score
-        timestamp = time.strftime("%Y%m%d-%H%M%S")  # Format time and date
-        new_image_name = f"{final_class_name}-{confidence_score}-{timestamp}.jpg"  # Use final class name
-        new_image_path = os.path.join('data/images', new_image_name)
-
-        # Save the full image with the new filename
-        cv2.imwrite(new_image_path, img)  # Save the full image
-        print(f"Saved image: {new_image_path}")  # Debug print
-
-        # Save the image after inference with bounding boxes
-        after_inference_image_path = os.path.join('data/images/', 'image_after_inference.jpg')
-        cv2.imwrite(after_inference_image_path, img)  # Save the image with bounding boxes
-        print(f"Saved image after inference: {after_inference_image_path}")  # Debug print
-
-        # Update the live feed with the new image
-        print(f"Updating live feed with image: {after_inference_image_path}")  # Debug print
-        self.update_live_feed(after_inference_image_path)
-
-        self.show_captured_image()
-
-        return after_inference_image_path
-
-    def _save_detection_results(self, image_path, config):
-        # Implementation of _save_detection_results method
-        pass
-
-    def _update_ui(self, image_path):
-        self.update_live_feed(image_path)
+            # Redraw charts
+            self.redraw_insect_count_chart()
+            self.redraw_detection_timeline_chart()
 
     def update_live_feed(self, image_path: str) -> None:
         """Update the live feed canvas with the new image."""
@@ -384,52 +355,11 @@ class vespcvGUI(tk.Tk):
             self.live_feed_canvas.delete("all")
 
     def __del__(self):
+        """Cleanup when the GUI is destroyed."""
         for handler in self._cleanup_handlers:
             handler()
-
-    def handle_detection_result(self, result):
-        # Use self.after() to update GUI elements safely
-        self.after(0, self.update_gui_with_result, result)
-
-    def update_gui_with_result(self, result):
-        """
-        Update the GUI with the latest detection result.
-        :param result: dict with keys 'image_path' and 'detection' (class, confidence, timestamp)
-        """
-        # 1. Update live feed
-        image_path = result.get("image_path")
-        if image_path and os.path.exists(image_path):
-            self.update_live_feed(image_path)
-
-        # 2. Update logs
-        detection = result.get("detection", {})
-        log_entry = (
-            f"{detection.get('timestamp', '')} - "
-            f"Class: {detection.get('class', '')}, "
-            f"Confidence: {detection.get('confidence', '')}\n"
-        )
-        self.log_text.config(state='normal')
-        self.log_text.insert('end', log_entry)
-        self.log_text.see('end')
-        self.log_text.config(state='disabled')
-
-        # 3. Update charts (example: increment detection count)
-        detected_class = detection.get('class')
-        if detected_class:
-            # Update your internal data structure for the bar chart
-            # For example, if you have a dict: self.detection_counts
-            if not hasattr(self, 'detection_counts'):
-                self.detection_counts = {}
-            self.detection_counts[detected_class] = self.detection_counts.get(detected_class, 0) + 1
-
-            # Redraw the bar chart
-            self.redraw_insect_count_chart()
-
-            # Update timeline data (if you have a structure for it)
-            if not hasattr(self, 'detection_timeline'):
-                self.detection_timeline = []
-            self.detection_timeline.append((detection.get('timestamp'), detected_class))
-            self.redraw_detection_timeline_chart()
+        if hasattr(self, 'detector'):
+            self.detector.shutdown()
 
     def redraw_insect_count_chart(self):
         # Example: clear and redraw the bar chart with updated self.detection_counts
