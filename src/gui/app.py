@@ -165,8 +165,11 @@ class vespcvGUI(tk.Tk):
         self.live_feed_frame.bind('<Configure>', self.on_live_feed_frame_resize)
 
         # Combined charts section
-        interval_minutes = self.config.get('chart_interval', 1)  # Get from config with default of 1
-        self.charts_frame = ttk.LabelFrame(parent_frame, text=f'Detecties per {interval_minutes} Minute{"s" if interval_minutes > 1 else ""}')
+        interval_minutes = self.config.get('chart_interval', 1)
+        self.charts_frame = ttk.LabelFrame(
+            parent_frame,
+            text=f'Detecties per {interval_minutes} Minute{"s" if interval_minutes > 1 else ""}'
+        )
         self.charts_frame.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH, padx=5, pady=5)
         self.redraw_combined_chart()
 
@@ -193,7 +196,8 @@ class vespcvGUI(tk.Tk):
         detections_grid_frame.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
 
         # Load images that start with "vvel"
-        images_folder = '/home/vcv/vespcv/data/images'  # Update to your images folder path
+        images_folder = '/home/vcv/vespcv/data/images'
+        os.makedirs(images_folder, exist_ok=True)
         vvel_images = [f for f in os.listdir(images_folder) if f.startswith('vvel')]
         
         # Extract confidence scores and sort images
@@ -545,8 +549,10 @@ class vespcvGUI(tk.Tk):
                 other_counts = [interval_counts[interval]['other'] for interval in sorted_intervals]
                 
                 # Create stacked bar chart
-                bars_vvel = ax.bar(sorted_intervals, vvel_counts, color='#FF0000', alpha=0.7, label='Vespa velutina')
-                bars_other = ax.bar(sorted_intervals, other_counts, bottom=vvel_counts, color='#808080', alpha=0.7, label='Other species')
+                x = np.arange(len(sorted_intervals))
+                bar_width = 0.1
+                bars_vvel = ax.bar(x, vvel_counts, width=bar_width, color='#FF0000', alpha=0.7, label='Vespa velutina')
+                bars_other = ax.bar(x, other_counts, width=bar_width, bottom=vvel_counts, color='#808080', alpha=0.7, label='Other species')
                 
                 # Add count labels on top of bars
                 for i, (vvel, other) in enumerate(zip(vvel_counts, other_counts)):
@@ -563,7 +569,7 @@ class vespcvGUI(tk.Tk):
                 ax.legend(loc='upper right')
                 
                 # Rotate x-axis labels for better readability
-                plt.xticks(rotation=45, ha='right')
+                plt.xticks(x, sorted_intervals, rotation=45, ha='right')
                 
                 # Add grid for better readability
                 ax.grid(True, linestyle='--', alpha=0.3)
