@@ -43,6 +43,7 @@ class ImageHandler:
                 return None
                 
             with self._lock:
+                # Load image using PIL
                 img = Image.open(abs_path)
                 
                 # Calculate new dimensions maintaining aspect ratio
@@ -58,7 +59,7 @@ class ImageHandler:
                 new_width = int(img_width * scale_factor)
                 new_height = int(img_height * scale_factor)
                 
-                # Resize image
+                # Resize image using LANCZOS resampling for better quality
                 img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
                 return img
         except Exception as e:
@@ -132,9 +133,10 @@ class vespcvGUI(tk.Tk):
 
         # Add the main title
         ttk.Label(header_frame, text="Aziatisch-/Geelpotige Hoornaar Detector", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
-        ttk.Button(header_frame, text="UITZETTEN", style='Red.TButton').pack(side=tk.RIGHT, padx=2)
-        ttk.Button(header_frame, text="STOP DETECTIE", style='Orange.TButton').pack(side=tk.RIGHT, padx=2) 
-        ttk.Button(header_frame, text="START DETECTIE", style='Green.TButton').pack(side=tk.RIGHT, padx=2) 
+        
+        # Create buttons with their respective commands
+        ttk.Button(header_frame, text="STOP DETECTIE", style='Orange.TButton', command=self.stop_detection).pack(side=tk.RIGHT, padx=2) 
+        ttk.Button(header_frame, text="START DETECTIE", style='Green.TButton', command=self.start_detection).pack(side=tk.RIGHT, padx=2)
 
     def create_main_content(self):
         # Main area with live feed, detections, and charts
@@ -187,16 +189,6 @@ class vespcvGUI(tk.Tk):
     def create_saved_detections_section(self, parent_frame):
         """This method will create the content inside the Saved Detections LabelFrame"""
         
-        # Frame for filter and download controls
-        controls_frame = ttk.Frame(parent_frame)
-        controls_frame.pack(fill=tk.X, padx=5, pady=5)
-
-        # Filter button
-        ttk.Button(controls_frame, text="Alleen Vespa velutina").pack(side=tk.LEFT, padx=5)  # Detect only Vespa velutina
-
-        # Download button
-        ttk.Button(controls_frame, text="Download").pack(side=tk.RIGHT, padx=5)
-
         # Frame for the detection grid placeholders
         detections_grid_frame = ttk.Frame(parent_frame)
         detections_grid_frame.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
@@ -280,6 +272,12 @@ class vespcvGUI(tk.Tk):
             if annotated_path and os.path.exists(annotated_path):
                 self.latest_image_path = annotated_path
                 self.update_live_feed(annotated_path)
+            else:
+                # If no annotated image, try to show the latest captured image
+                latest_capture = os.path.join(self.config['images_folder'], 'image_for_detection.jpg')
+                if os.path.exists(latest_capture):
+                    self.latest_image_path = latest_capture
+                    self.update_live_feed(latest_capture)
 
             # Update logs
             detection = result.get("detection", {})
@@ -329,20 +327,58 @@ class vespcvGUI(tk.Tk):
 
     def update_live_feed(self, image_path: str) -> None:
         """Update the live feed canvas with the new image."""
-        with self.image_lock:
-            canvas_width = self.live_feed_canvas.winfo_width()
-            canvas_height = self.live_feed_canvas.winfo_height()
-            img = self.image_handler.load_and_resize_image(
-                image_path,
-                (canvas_width, canvas_height)
-            )
-            if img:
-                photo = ImageTk.PhotoImage(img)
-                self.live_feed_canvas.delete("all")
-                self.live_feed_canvas.create_image(
-                    canvas_width // 2, canvas_height // 2, anchor=tk.CENTER, image=photo
+        try:
+            with self.image_lock:
+                # Get current canvas size
+                canvas_width = self.live_feed_canvas.winfo_width()
+                canvas_height = self.live_feed_canvas.winfo_height()
+                
+                if canvas_width <= 1 or canvas_height <= 1:
+                    # Canvas not ready yet, schedule update for later
+                    self.after(100, lambda: self.update_live_feed(image_path))
+                    return
+                
+                # Load and resize image
+                img = self.image_handler.load_and_resize_image(
+                    image_path,
+                    (canvas_width, canvas_height)
                 )
-                self.live_feed_canvas.image = photo
+                
+                if img:
+                    # Convert to PhotoImage
+                    photo = ImageTk.PhotoImage(img)
+                    
+                    # Clear canvas and create new image
+                    self.live_feed_canvas.delete("all")
+                    self.live_feed_canvas.create_image(
+                        canvas_width // 2,
+                        canvas_height // 2,
+                        anchor=tk.CENTER,
+                        image=photo
+                    )
+                    # Keep a reference to prevent garbage collection
+                    self.live_feed_canvas.image = photo
+                else:
+                    # Show error message if image loading failed
+                    self.live_feed_canvas.delete("all")
+                    self.live_feed_canvas.create_text(
+                        canvas_width // 2,
+                        canvas_height // 2,
+                        text="No image available",
+                        fill="white",
+                        font=("Arial", 14)
+                    )
+        except Exception as e:
+            self.logger.error(f"Error updating live feed: {e}")
+            # Show error message on canvas
+            self.live_feed_canvas.delete("all")
+            self.live_feed_canvas.create_text(
+                self.live_feed_canvas.winfo_width() // 2,
+                self.live_feed_canvas.winfo_height() // 2,
+                text="Error updating display",
+                fill="white",
+                font=("Arial", 14)
+            )
 
     def show_captured_image(self):
         """Show the most recently captured image."""
@@ -499,24 +535,33 @@ class vespcvGUI(tk.Tk):
             self.logger.error(f"Error redrawing timeline chart: {e}")
 
     def on_live_feed_frame_resize(self, event):
-        # Step 3: Calculate largest 4:3 rectangle
-        frame_width = event.width
-        frame_height = event.height
-        aspect = 4 / 3
-
-        if frame_width / aspect <= frame_height:
-            new_width = frame_width
-            new_height = int(frame_width / aspect)
-        else:
-            new_height = frame_height
-            new_width = int(frame_height * aspect)
-
-        # Step 4: Resize canvas
-        self.live_feed_canvas.config(width=new_width, height=new_height)
-
-        # Step 5: Redraw image
-        if self.latest_image_path:
-            self.update_live_feed(self.latest_image_path)
+        """Handle live feed frame resize events."""
+        try:
+            # Get new frame dimensions
+            frame_width = event.width
+            frame_height = event.height
+            
+            if frame_width <= 1 or frame_height <= 1:
+                return  # Ignore invalid sizes
+            
+            # Calculate dimensions maintaining 4:3 aspect ratio
+            aspect = 4 / 3
+            
+            if frame_width / aspect <= frame_height:
+                new_width = frame_width
+                new_height = int(frame_width / aspect)
+            else:
+                new_height = frame_height
+                new_width = int(frame_height * aspect)
+            
+            # Update canvas size
+            self.live_feed_canvas.config(width=new_width, height=new_height)
+            
+            # Redraw current image if available
+            if self.latest_image_path:
+                self.update_live_feed(self.latest_image_path)
+        except Exception as e:
+            self.logger.error(f"Error handling live feed resize: {e}")
 
 if __name__ == "__main__":
     app = vespcvGUI()
