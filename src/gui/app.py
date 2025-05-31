@@ -14,6 +14,7 @@ from threading import Lock
 from typing import Optional, List, Dict
 import numpy as np
 from src.core.detector import DetectionController
+from datetime import datetime
 
 class ImageHandler:
     def __init__(self, logger):
@@ -377,11 +378,7 @@ class vespcvGUI(tk.Tk):
             
             if hasattr(self, 'detection_timeline') and self.detection_timeline:
                 # Convert timestamps to datetime objects and group by configured interval
-                from datetime import datetime, timedelta
                 from collections import defaultdict
-                
-                # Get interval from config
-                interval_minutes = self.config.get('chart_interval', 1)
                 
                 # Group detections by interval and class
                 interval_counts = defaultdict(lambda: {'vvel': 0, 'other': 0})
@@ -391,7 +388,7 @@ class vespcvGUI(tk.Tk):
                         dt = datetime.strptime(timestamp, "%Y%m%d-%H%M%S")
                         # Round down to nearest interval
                         minutes = dt.hour * 60 + dt.minute
-                        interval_start = minutes - (minutes % interval_minutes)
+                        interval_start = minutes - (minutes % self.config.get('chart_interval', 1))
                         interval_key = f"{interval_start // 60:02d}:{interval_start % 60:02d}"
                         
                         # Count vvel (class 3) separately
@@ -400,7 +397,18 @@ class vespcvGUI(tk.Tk):
                         else:
                             interval_counts[interval_key]['other'] += 1
                 
-                # Sort by time
+                # Get current interval key
+                now = datetime.now()
+                interval_minutes = self.config.get('chart_interval', 1)
+                minutes = now.hour * 60 + now.minute
+                interval_start = minutes - (minutes % interval_minutes)
+                current_interval_key = f"{interval_start // 60:02d}:{interval_start % 60:02d}"
+
+                # Ensure the current interval is present in the data
+                if current_interval_key not in interval_counts:
+                    interval_counts[current_interval_key] = {'vvel': 0, 'other': 0}
+
+                # Sort intervals (including the current one)
                 sorted_intervals = sorted(interval_counts.keys())
                 
                 # Prepare data for stacked bar chart
