@@ -161,24 +161,10 @@ class vespcvGUI(tk.Tk):
         self.live_feed_canvas.pack()
         self.live_feed_frame.bind('<Configure>', self.on_live_feed_frame_resize)
 
-        # Charts section
-        charts_frame = ttk.Frame(parent_frame)
-        charts_frame.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH, padx=5, pady=5)
-
-        self.create_insect_count_chart(charts_frame)
-        self.create_detection_timeline_chart(charts_frame)
-
-    def create_insect_count_chart(self, parent_frame):
-        """Create the insect count bar chart frame."""
-        self.bar_chart_frame = ttk.LabelFrame(parent_frame, text="Insecten detectie teller")
-        self.bar_chart_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
-        self.redraw_insect_count_chart()
-
-    def create_detection_timeline_chart(self, parent_frame):
-        """Create the detection timeline chart frame."""
-        self.timeline_chart_frame = ttk.LabelFrame(parent_frame, text="Detectie tijdlijn")
-        self.timeline_chart_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
-        self.redraw_detection_timeline_chart()
+        # Combined charts section
+        self.charts_frame = ttk.LabelFrame(parent_frame, text="Detection Statistics")
+        self.charts_frame.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH, padx=5, pady=5)
+        self.redraw_combined_chart()
 
     def create_right_panel(self, parent_frame):
         # This method will contain Saved Detections and Logs
@@ -337,9 +323,8 @@ class vespcvGUI(tk.Tk):
                 self.detection_timeline = []
             self.detection_timeline.append((detection.get('timestamp'), detected_class))
 
-            # Redraw charts
-            self.redraw_insect_count_chart()
-            self.redraw_detection_timeline_chart()
+            # Redraw combined chart
+            self.redraw_combined_chart()
 
     def update_live_feed(self, image_path: str) -> None:
         """Update the live feed canvas with the new image."""
@@ -380,82 +365,55 @@ class vespcvGUI(tk.Tk):
         if hasattr(self, 'detector'):
             self.detector.shutdown()
 
-    def redraw_insect_count_chart(self):
-        """Redraw the insect count bar chart with current data."""
+    def redraw_combined_chart(self):
+        """Redraw the detection timeline chart with count information."""
         try:
             # Clear the existing chart
-            for widget in self.bar_chart_frame.winfo_children():
+            for widget in self.charts_frame.winfo_children():
                 widget.destroy()
 
             # Create new figure and axes
-            fig, ax = plt.subplots(figsize=(4, 3))
-            
-            if hasattr(self, 'detection_counts') and self.detection_counts:
-                # Get data for plotting
-                classes = list(self.detection_counts.keys())
-                counts = list(self.detection_counts.values())
-                
-                # Create bar chart
-                ax.bar(classes, counts, color='#FFA000')
-                ax.set_ylabel('Count')
-                ax.set_title('Insect Detection Count')
-                
-                # Rotate x-axis labels if needed
-                plt.xticks(rotation=45, ha='right')
-                
-                # Adjust layout
-                plt.tight_layout()
-            else:
-                # Show empty chart with message
-                ax.text(0.5, 0.5, 'No detections yet', 
-                       horizontalalignment='center',
-                       verticalalignment='center',
-                       transform=ax.transAxes)
-
-            # Embed in Tkinter
-            canvas = FigureCanvasTkAgg(fig, master=self.bar_chart_frame)
-            canvas.draw()
-            canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH)
-            
-        except Exception as e:
-            self.logger.error(f"Error redrawing insect count chart: {e}")
-
-    def redraw_detection_timeline_chart(self):
-        """Redraw the detection timeline chart with current data."""
-        try:
-            # Clear the existing chart
-            for widget in self.timeline_chart_frame.winfo_children():
-                widget.destroy()
-
-            # Create new figure and axes
-            fig, ax = plt.subplots(figsize=(4, 3))
+            fig, ax = plt.subplots(figsize=(6, 4))
             
             if hasattr(self, 'detection_timeline') and self.detection_timeline:
                 # Extract data
                 timestamps = [t[0] for t in self.detection_timeline]
                 classes = [t[1] for t in self.detection_timeline]
                 
-                # Create timeline plot
-                ax.plot(range(len(timestamps)), [1 if c != "no_detection" else 0 for c in classes], 
-                       color='#FFA000', marker='o')
+                # Create timeline plot with different colors for each class
+                for class_name in set(classes):
+                    if class_name != "no_detection":
+                        # Get indices where this class was detected
+                        indices = [i for i, c in enumerate(classes) if c == class_name]
+                        # Get count for this class
+                        count = self.detection_counts.get(class_name, 0)
+                        # Plot points for this class with count in label
+                        ax.plot([timestamps[i] for i in indices], 
+                               [1] * len(indices), 
+                               'o', 
+                               label=f'{class_name} (count: {count})',
+                               markersize=10)
+                
                 ax.set_ylabel('Detection')
                 ax.set_title('Detection Timeline')
+                ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1))
+                ax.grid(True, linestyle='--', alpha=0.7)
                 
                 # Format x-axis
                 ax.set_xticks(range(len(timestamps)))
                 ax.set_xticklabels([t.split('-')[1] for t in timestamps], rotation=45, ha='right')
                 
-                # Adjust layout
+                # Adjust layout to prevent label cutoff
                 plt.tight_layout()
             else:
                 # Show empty chart with message
                 ax.text(0.5, 0.5, 'No timeline data yet', 
-                       horizontalalignment='center',
-                       verticalalignment='center',
-                       transform=ax.transAxes)
+                        horizontalalignment='center',
+                        verticalalignment='center',
+                        transform=ax.transAxes)
 
             # Embed in Tkinter
-            canvas = FigureCanvasTkAgg(fig, master=self.timeline_chart_frame)
+            canvas = FigureCanvasTkAgg(fig, master=self.charts_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH)
             
