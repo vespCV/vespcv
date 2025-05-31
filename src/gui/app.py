@@ -225,6 +225,46 @@ class vespcvGUI(tk.Tk):
             label = ttk.Label(placeholder_frame, image=photo)
             label.image = photo  # Keep a reference to avoid garbage collection
             label.pack(expand=True, fill=tk.BOTH)
+            
+            # Add click event to download original image
+            def create_click_handler(original_path):
+                def on_click(event):
+                    try:
+                        # Get the original image path from yolo_jpg_txt directory
+                        yolo_dir = os.path.join('data', 'yolo_jpg_txt')
+                        original_filename = os.path.basename(original_path)
+                        original_image_path = os.path.join(yolo_dir, original_filename)
+                        
+                        if os.path.exists(original_image_path):
+                            # Try to use Desktop first, fallback to Downloads folder
+                            home_dir = os.path.expanduser("~")
+                            desktop_path = os.path.join(home_dir, "Desktop")
+                            downloads_path = os.path.join(home_dir, "Downloads")
+                            
+                            # Create the target directory if it doesn't exist
+                            target_dir = desktop_path if os.path.exists(desktop_path) else downloads_path
+                            os.makedirs(target_dir, exist_ok=True)
+                            
+                            # Copy the original image to the target directory
+                            import shutil
+                            download_path = os.path.join(target_dir, original_filename)
+                            shutil.copy2(original_image_path, download_path)
+                            
+                            # Log the download
+                            self.logger.info(f"Original image downloaded to: {download_path}")
+                            
+                            # Show success message
+                            tk.messagebox.showinfo("Download", f"Image downloaded to: {download_path}")
+                        else:
+                            tk.messagebox.showerror("Error", "Original image not found")
+                    except Exception as e:
+                        self.logger.error(f"Error downloading image: {e}")
+                        tk.messagebox.showerror("Error", f"Failed to download image: {str(e)}")
+                
+                return on_click
+            
+            # Bind click event to the label
+            label.bind('<Button-1>', create_click_handler(image_path))
 
             # Format timestamp to hh:mm:ss
             if len(time_part) == 6:
