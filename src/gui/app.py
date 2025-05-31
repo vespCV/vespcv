@@ -14,7 +14,7 @@ from threading import Lock
 from typing import Optional, List, Dict
 import numpy as np
 from src.core.detector import DetectionController
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class ImageHandler:
     def __init__(self, logger):
@@ -408,10 +408,31 @@ class vespcvGUI(tk.Tk):
                 if current_interval_key not in interval_counts:
                     interval_counts[current_interval_key] = {'vvel': 0, 'other': 0}
 
-                # Sort intervals (including the current one)
-                sorted_intervals = sorted(interval_counts.keys())
-                
-                # Prepare data for stacked bar chart
+                # 1. Find the earliest and latest interval
+                all_interval_keys = list(interval_counts.keys())
+                all_interval_keys.append(current_interval_key)
+                all_interval_keys = sorted(set(all_interval_keys))
+
+                # Convert interval keys to datetime objects for range calculation
+                interval_format = "%H:%M"
+                interval_times = [datetime.strptime(k, interval_format) for k in all_interval_keys]
+                start_time = min(interval_times)
+                end_time = max(interval_times)
+
+                # 2. Build a complete list of intervals
+                num_intervals = int(((end_time - start_time).total_seconds() // 60) // interval_minutes) + 1
+                full_intervals = [
+                    (start_time + timedelta(minutes=i * interval_minutes)).strftime(interval_format)
+                    for i in range(num_intervals)
+                ]
+
+                # 3. Fill missing intervals with zero counts
+                for interval in full_intervals:
+                    if interval not in interval_counts:
+                        interval_counts[interval] = {'vvel': 0, 'other': 0}
+
+                # 4. Prepare data for plotting
+                sorted_intervals = full_intervals
                 vvel_counts = [interval_counts[interval]['vvel'] for interval in sorted_intervals]
                 other_counts = [interval_counts[interval]['other'] for interval in sorted_intervals]
                 
@@ -442,11 +463,32 @@ class vespcvGUI(tk.Tk):
                 # Adjust layout to prevent label cutoff
                 plt.tight_layout()
             else:
-                # Show empty chart with message
-                ax.text(0.5, 0.5, 'No detection data yet', 
-                        horizontalalignment='center',
-                        verticalalignment='center',
-                        transform=ax.transAxes)
+                # Show the last N intervals, even if there are no detections yet
+                now = datetime.now()
+                interval_minutes = self.config.get('chart_interval', 1)
+                N = 5  # Number of intervals to show (change as needed)
+                interval_format = "%H:%M"
+
+                # Build a list of the last N intervals ending with the current one
+                full_intervals = [
+                    (now - timedelta(minutes=(N - 1 - i) * interval_minutes)).strftime(interval_format)
+                    for i in range(N)
+                ]
+                vvel_counts = [0] * N
+                other_counts = [0] * N
+
+                # Create stacked bar chart (all empty)
+                bars_vvel = ax.bar(full_intervals, vvel_counts, color='#FF0000', alpha=0.7, label='Vespa velutina')
+                bars_other = ax.bar(full_intervals, other_counts, bottom=vvel_counts, color='#808080', alpha=0.7, label='Other species')
+
+                ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
+                ax.set_ylabel('Number of Detections')
+                plural = "s" if interval_minutes > 1 else ""
+                ax.set_title(f'Detections per {interval_minutes} Minute{plural}')
+                ax.legend(loc='upper right')
+                plt.xticks(rotation=45, ha='right')
+                ax.grid(True, linestyle='--', alpha=0.3)
+                plt.tight_layout()
 
             # Embed in Tkinter
             canvas = FigureCanvasTkAgg(fig, master=self.charts_frame)
