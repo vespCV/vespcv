@@ -548,6 +548,13 @@ class vespcvGUI(tk.Tk):
                 vvel_counts = [interval_counts[interval]['vvel'] for interval in sorted_intervals]
                 other_counts = [interval_counts[interval]['other'] for interval in sorted_intervals]
                 
+                # Add dummy intervals for padding
+                dummy_left = ''
+                dummy_right = ''
+                sorted_intervals = [dummy_left] + sorted_intervals + [dummy_right]
+                vvel_counts = [0] + vvel_counts + [0]
+                other_counts = [0] + other_counts + [0]
+                
                 # Create stacked bar chart
                 x = np.arange(len(sorted_intervals))
                 bar_width = 0.1
@@ -569,7 +576,8 @@ class vespcvGUI(tk.Tk):
                 ax.legend(loc='upper right')
                 
                 # Rotate x-axis labels for better readability
-                plt.xticks(x, sorted_intervals, rotation=45, ha='right')
+                ax.set_xticks(x)
+                ax.set_xticklabels(sorted_intervals, rotation=45, ha='right')
                 
                 # Add grid for better readability
                 ax.grid(True, linestyle='--', alpha=0.3)
