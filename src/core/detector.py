@@ -166,8 +166,7 @@ class DetectionController:
         """Save the annotated image and return its path."""
         try:
             # Create filename
-            timestamp = time.strftime("%Y%m%d-%H%M%S")
-            filename = f"image_after_inference_{timestamp}.jpg"
+            filename = "image_after_inference.jpg"
             output_path = os.path.join(self.config['images_folder'], filename)
             
             # Save image
