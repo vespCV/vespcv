@@ -6,7 +6,7 @@ from tkinter import scrolledtext # Import scrolledtext for a text area with a sc
 import threading
 import time
 import os
-from PIL import Image, ImageTk  # Import PIL for image handling
+from PIL import Image, ImageTk, ImageDraw, ImageFont
 import cv2
 import queue
 import logging
@@ -165,7 +165,8 @@ class vespcvGUI(tk.Tk):
         self.live_feed_frame.bind('<Configure>', self.on_live_feed_frame_resize)
 
         # Combined charts section
-        self.charts_frame = ttk.LabelFrame(parent_frame, text="Detection Statistics")
+        interval_minutes = self.config.get('chart_interval', 1)  # Get from config with default of 1
+        self.charts_frame = ttk.LabelFrame(parent_frame, text=f'Detecties per {interval_minutes} Minute{"s" if interval_minutes > 1 else ""}')
         self.charts_frame.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH, padx=5, pady=5)
         self.redraw_combined_chart()
 
@@ -173,11 +174,9 @@ class vespcvGUI(tk.Tk):
         # This method will contain Saved Detections and Logs
 
         # Saved Detections section (takes up the top part of the right panel)
-        saved_detections_frame = ttk.LabelFrame(parent_frame, text="Opgeslagen detecties") #Saved detections
-        saved_detections_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5) # Saved Detections will take up the top part of the right frame
-
-        # Add content to the Saved Detections frame
-        self.create_saved_detections_section(saved_detections_frame)
+        self.saved_detections_frame = ttk.LabelFrame(parent_frame, text="Opgeslagen detecties")
+        self.saved_detections_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
+        self.create_saved_detections_section(self.saved_detections_frame)
 
         # System Logs section (takes up the bottom part of the right panel)
         log_frame = ttk.LabelFrame(parent_frame, text="System Logs")
@@ -210,12 +209,19 @@ class vespcvGUI(tk.Tk):
         image_data.sort(key=lambda x: x[1], reverse=True)
         top_images = image_data[:4]  # Get the top 4 images
 
+        num_real = len(top_images)
+        num_placeholders = 4 - num_real
+
         # Add image frames to the grid
         for i, (image_name, _, time_part) in enumerate(top_images):
             image_path = os.path.join(images_folder, image_name)
-            img = Image.open(image_path)
-            img.thumbnail((100, 100))  # Resize image to fit in the frame
-            photo = ImageTk.PhotoImage(img)
+            try:
+                img = Image.open(image_path)
+                img.thumbnail((120, 90))
+                photo = ImageTk.PhotoImage(img)
+            except Exception as e:
+                self.logger.error(f"Failed to load thumbnail for {image_path}: {e}")
+                continue
 
             # Create a frame for each image
             placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120)
@@ -273,6 +279,29 @@ class vespcvGUI(tk.Tk):
                 formatted_time = time_part  # fallback
 
             ttk.Label(placeholder_frame, text=formatted_time, anchor="center").pack(expand=True, fill=tk.BOTH)
+
+        # Add placeholders if there are fewer than 4 images
+        for _ in range(num_placeholders):
+            # Create a blank image (e.g., gray background)
+            img = Image.new('RGB', (120, 90), color=(200, 200, 200))
+            draw = ImageDraw.Draw(img)
+            # Add text in the center
+            text = "No detection"
+            font = ImageFont.load_default()
+            bbox = draw.textbbox((0, 0), text, font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            draw.text(
+                ((120 - text_width) // 2, (90 - text_height) // 2),
+                text, fill=(100, 100, 100), font=font
+            )
+            photo = ImageTk.PhotoImage(img)
+            placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120)
+            placeholder_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=6, pady=6)
+            label = ttk.Label(placeholder_frame, image=photo)
+            label.image = photo
+            label.pack(expand=True, fill=tk.BOTH)
+            ttk.Label(placeholder_frame, text="--:--:--", anchor="center").pack(expand=True, fill=tk.BOTH)
 
     def create_log_display(self, parent_frame):
         # Create the log display area
@@ -342,6 +371,9 @@ class vespcvGUI(tk.Tk):
 
             # Update charts
             self._update_charts(detection)
+
+            # Refresh saved detections
+            self.refresh_saved_detections()
         except Exception as e:
             self.logger.error(f"Error updating GUI: {e}")
 
@@ -525,7 +557,7 @@ class vespcvGUI(tk.Tk):
                 
                 ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
                 ax.set_ylabel('Number of Detections')
-                ax.set_title(f'Detections per {interval_minutes} Minute{"s" if interval_minutes > 1 else ""}')
+                # ax.set_title(f'Detecties per {interval_minutes} Minute{"s" if interval_minutes > 1 else ""}')
                 
                 # Add legend
                 ax.legend(loc='upper right')
@@ -602,6 +634,13 @@ class vespcvGUI(tk.Tk):
                 self.update_live_feed(self.latest_image_path)
         except Exception as e:
             self.logger.error(f"Error handling live feed resize: {e}")
+
+    def refresh_saved_detections(self):
+        # Remove all widgets from the frame
+        for widget in self.saved_detections_frame.winfo_children():
+            widget.destroy()
+        # Rebuild the section
+        self.create_saved_detections_section(self.saved_detections_frame)
 
 if __name__ == "__main__":
     app = vespcvGUI()

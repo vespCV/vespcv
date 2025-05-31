@@ -25,4 +25,4 @@ lensposition: 1
 capture_interval: 15
 
 # Chart interval in minutes for grouping detections
-chart_interval: 1
+chart_interval: 15
