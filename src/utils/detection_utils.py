@@ -99,17 +99,22 @@ def save_annotated_image(image, results, config):
         logger.error(f"Error saving images: {e}")
         return None
 
-def save_original_image(config, detections=None):
-    """Save the original image with detection metadata in the filename.
+def save_original_image(config, detections=None, results=None):
+    """Save the original image with detection metadata in the filename and create a YOLO format text file.
     
     Args:
         config: Configuration dictionary
         detections: Dictionary containing detection information (optional)
+        results: YOLO detection results containing bounding boxes (optional)
         
     Returns:
         str: Path to the saved original image
     """
     try:
+        # Create the new yolo_jpg_txt directory
+        yolo_dir = os.path.join('data', 'yolo_jpg_txt')
+        os.makedirs(yolo_dir, exist_ok=True)
+        
         # Load configuration
         images_folder = config.get('images_folder')
         original_image_path = os.path.join(images_folder, 'image_for_detection.jpg')
@@ -124,17 +129,42 @@ def save_original_image(config, detections=None):
             class_name = detections["class"]
             confidence = detections["confidence"]
             timestamp = detections["timestamp"]
-            new_filename = f"_{class_name}-{confidence}-{timestamp}.jpg"
+            base_filename = f"{class_name}-{confidence}-{timestamp}"
         else:
             # Fallback to the old behavior if no detection metadata
-            new_filename = f"_{os.path.basename(original_image_path)}"
+            base_filename = f"_{os.path.basename(original_image_path)}"
             
-        new_image_path = os.path.join(images_folder, new_filename)
-        
-        # Save the original image with the new filename
+        # Save the image
+        new_image_path = os.path.join(yolo_dir, f"{base_filename}.jpg")
         cv2.imwrite(new_image_path, cv2.imread(original_image_path))
         logger.debug(f"Original image saved to {new_image_path}")
-
+        
+        # If we have YOLO results, create the YOLO format text file
+        if results and results.boxes:
+            # Get the image dimensions for normalization
+            img = cv2.imread(original_image_path)
+            img_height, img_width = img.shape[:2]
+            
+            # Create the text file with the same base name
+            txt_path = os.path.join(yolo_dir, f"{base_filename}.txt")
+            
+            with open(txt_path, 'w') as f:
+                for box in results.boxes:
+                    # Get normalized coordinates (x_center, y_center, width, height)
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    class_id = int(box.cls[0])
+                    
+                    # Convert to YOLO format (normalized)
+                    x_center = (x1 + x2) / (2 * img_width)
+                    y_center = (y1 + y2) / (2 * img_height)
+                    width = (x2 - x1) / img_width
+                    height = (y2 - y1) / img_height
+                    
+                    # Write in YOLO format: class_id x_center y_center width height
+                    f.write(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
+            
+            logger.debug(f"YOLO format text file saved to {txt_path}")
+        
         return new_image_path
 
     except Exception as e:

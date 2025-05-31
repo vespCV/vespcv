@@ -107,8 +107,8 @@ class DetectionController:
             if not detections:
                 return None
 
-            # Save original image with detection metadata
-            original_path = save_original_image(self.config, detections)
+            # Save original image with detection metadata and YOLO results
+            original_path = save_original_image(self.config, detections, results)
 
             # Save annotated image for GUI
             annotated_path = save_annotated_image(img, results, self.config)
