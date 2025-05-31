@@ -71,6 +71,7 @@ def capture_image():
         # Capture image using libcamera-still
         subprocess.run([
             "libcamera-still",
+            "--nopreview",
             "-o", image_path,
             "--width", "4656",
             "--height", "3496"
