@@ -27,7 +27,7 @@ def save_annotated_image(image_path, raw_results, config):
                 
                 # Use integer coordinate for the text position
                 text_y = y1 - 10 if y1 - 10 > 10 else y1 + 10
-                cv2.putText(annotated_image, label, (x1, int(text_y)), cv2.FONT_HERSHEY_SIMPLEX, 5.0, (255, 255, 255), 2)
+                cv2.putText(annotated_image, label, (x1, int(text_y)), cv2.FONT_HERSHEY_SIMPLEX, 15.0, (255, 255, 255), 8)
 
                 output_path = os.path.join(config.get('images_folder'), 'annotated_image.jpg')
                 cv2.imwrite(output_path, annotated_image)
