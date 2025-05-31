@@ -22,12 +22,12 @@ def save_annotated_image(image_path, raw_results, config):
                 class_name = class_names[class_id]
 
                 # Use integer coordinates for cv2.rectangle
-                cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 0, 255), 4)
+                cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 0, 255), 10)
                 label = f'{class_name} {box.conf[0]:.2f}'
                 
                 # Use integer coordinate for the text position
                 text_y = y1 - 10 if y1 - 10 > 10 else y1 + 10
-                cv2.putText(annotated_image, label, (x1, int(text_y)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                cv2.putText(annotated_image, label, (x1, int(text_y)), cv2.FONT_HERSHEY_SIMPLEX, 5.0, (255, 255, 255), 2)
 
                 output_path = os.path.join(config.get('images_folder'), 'annotated_image.jpg')
                 cv2.imwrite(output_path, annotated_image)
