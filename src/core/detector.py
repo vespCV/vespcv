@@ -69,7 +69,8 @@ class DetectionController:
         """Main detection loop."""
         while not self._stop_event.is_set():
             if self._pause_event.is_set():
-                time.sleep(0.1)
+                if self._stop_event.wait(0.1):
+                    break
                 continue
 
             try:
@@ -80,7 +81,8 @@ class DetectionController:
             except Exception as e:
                 logger.error("Error in detection loop: %s", e)
 
-            time.sleep(self.config['capture_interval'])
+            if self._stop_event.wait(self.config['capture_interval']):
+                break
 
     def _process_single_frame(self):
         """Process a single frame and return detection results."""
@@ -174,7 +176,19 @@ class DetectionController:
 
     def shutdown(self):
         """Shutdown the detection controller."""
-        self._stop_event.set()
-        if self._thread:
-            self._thread.join()
-        logger.info("Detection controller shut down")
+        try:
+            logger.info("Starting detector shutdown...")
+            # Set stop event to stop the detection loop
+            self._stop_event.set()
+            
+            # Wait for thread to finish with timeout
+            if self._thread and self._thread.is_alive():
+                logger.info("Waiting for detection thread to finish...")
+                self._thread.join(timeout=5.0)  # Wait up to 5 seconds
+                
+                if self._thread.is_alive():
+                    logger.warning("Detection thread did not stop gracefully")
+            
+            logger.info("Detector shutdown complete")
+        except Exception as e:
+            logger.error(f"Error during detector shutdown: {e}")
