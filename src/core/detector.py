@@ -108,6 +108,16 @@ class DetectionController:
             # Save annotated image
             annotated_path = self._save_annotated_image(img, results)
             
+            # Archive image if detection is valid
+            if detections["class"] != "no_detection":
+                class_name = detections["class"]
+                confidence = detections["confidence"]
+                timestamp = detections["timestamp"]
+                archive_filename = f"{class_name}-{confidence}-{timestamp}.jpg"
+                archive_path = os.path.join(self.config['images_folder'], archive_filename)
+                cv2.imwrite(archive_path, img)
+                logger.debug(f"Archived detection image: {archive_path}")
+
             return {
                 "image_path": annotated_path,
                 "detection": detections
