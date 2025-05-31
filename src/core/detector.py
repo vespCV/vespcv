@@ -156,7 +156,7 @@ class DetectionController:
                 # Add label
                 label = f"{class_name} {conf:.2f}"
                 cv2.putText(img, label, (int(x1), int(y1) - 10),
-                           cv2.FONT_HERSHEY_SIMPLEX, 15.0, (0, 255, 0), 8)
+                           cv2.FONT_HERSHEY_SIMPLEX, 15.0, (0, 255, 0), 15)
 
         if class_3_detected:
             final_class = "vvel"
