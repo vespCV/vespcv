@@ -8,6 +8,43 @@ import cv2
 from src.core.logger import logger
 from src.core.config_loader import load_config
 import time
+import json
+
+def log_detection_data(detections, image_path):
+    """Log detection data to a detections.log file in CSV format.
+    
+    Args:
+        detections: Dictionary containing detection information
+        image_path: Path to the detected image
+    """
+    try:
+        # Create logs directory if it doesn't exist
+        logs_dir = os.path.join('data', 'logs')
+        os.makedirs(logs_dir, exist_ok=True)
+        
+        # Prepare log entry
+        timestamp = detections.get('timestamp', time.strftime("%Y%m%d-%H%M%S"))
+        class_name = detections.get('class', 'no_detection')
+        confidence = detections.get('confidence', '0.00')
+        
+        # Write to log file
+        log_path = os.path.join(logs_dir, 'detections.log')
+        
+        # Check if file exists to write header
+        file_exists = os.path.exists(log_path)
+        
+        with open(log_path, 'a') as f:
+            # Write header if file is new
+            if not file_exists:
+                f.write("Timestamp,Class,Confidence,Image Path\n")
+            
+            # Write data row
+            f.write(f"{timestamp},{class_name},{confidence},{image_path}\n")
+            
+        logger.debug(f"Detection data logged to {log_path}")
+        
+    except Exception as e:
+        logger.error(f"Error logging detection data: {e}")
 
 def capture_image():
     """Capture an image using libcamera-still and save it to the configured path.
@@ -138,6 +175,10 @@ def save_original_image(config, detections=None, results=None):
         new_image_path = os.path.join(yolo_dir, f"{base_filename}.jpg")
         cv2.imwrite(new_image_path, cv2.imread(original_image_path))
         logger.debug(f"Original image saved to {new_image_path}")
+        
+        # Log detection data
+        if detections:
+            log_detection_data(detections, new_image_path)
         
         # If we have YOLO results, create the YOLO format text file
         if results and results.boxes:
