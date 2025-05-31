@@ -23,3 +23,6 @@ lensposition: 1
 
 # Interval in seconds between captures
 capture_interval: 15
+
+# Chart interval in minutes for grouping detections
+chart_interval: 1

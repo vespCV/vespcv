@@ -366,7 +366,7 @@ class vespcvGUI(tk.Tk):
             self.detector.shutdown()
 
     def redraw_combined_chart(self):
-        """Redraw the detection timeline chart with count information."""
+        """Redraw the detection timeline chart showing counts per configured interval."""
         try:
             # Clear the existing chart
             for widget in self.charts_frame.winfo_children():
@@ -376,38 +376,66 @@ class vespcvGUI(tk.Tk):
             fig, ax = plt.subplots(figsize=(6, 4))
             
             if hasattr(self, 'detection_timeline') and self.detection_timeline:
-                # Extract data
-                timestamps = [t[0] for t in self.detection_timeline]
-                classes = [t[1] for t in self.detection_timeline]
+                # Convert timestamps to datetime objects and group by configured interval
+                from datetime import datetime, timedelta
+                from collections import defaultdict
                 
-                # Create timeline plot with different colors for each class
-                for class_name in set(classes):
-                    if class_name != "no_detection":
-                        # Get indices where this class was detected
-                        indices = [i for i, c in enumerate(classes) if c == class_name]
-                        # Get count for this class
-                        count = self.detection_counts.get(class_name, 0)
-                        # Plot points for this class with count in label
-                        ax.plot([timestamps[i] for i in indices], 
-                               [1] * len(indices), 
-                               'o', 
-                               label=f'{class_name} (count: {count})',
-                               markersize=10)
+                # Get interval from config
+                interval_minutes = self.config.get('chart_interval', 1)
                 
-                ax.set_ylabel('Detection')
-                ax.set_title('Detection Timeline')
-                ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1))
-                ax.grid(True, linestyle='--', alpha=0.7)
+                # Group detections by interval and class
+                interval_counts = defaultdict(lambda: {'vvel': 0, 'other': 0})
+                for timestamp, class_name in self.detection_timeline:
+                    if class_name != "no_detection":  # Only count actual detections
+                        # Convert timestamp to datetime
+                        dt = datetime.strptime(timestamp, "%Y%m%d-%H%M%S")
+                        # Round down to nearest interval
+                        minutes = dt.hour * 60 + dt.minute
+                        interval_start = minutes - (minutes % interval_minutes)
+                        interval_key = f"{interval_start // 60:02d}:{interval_start % 60:02d}"
+                        
+                        # Count vvel (class 3) separately
+                        if class_name == 'vvel':
+                            interval_counts[interval_key]['vvel'] += 1
+                        else:
+                            interval_counts[interval_key]['other'] += 1
                 
-                # Format x-axis
-                ax.set_xticks(range(len(timestamps)))
-                ax.set_xticklabels([t.split('-')[1] for t in timestamps], rotation=45, ha='right')
+                # Sort by time
+                sorted_intervals = sorted(interval_counts.keys())
+                
+                # Prepare data for stacked bar chart
+                vvel_counts = [interval_counts[interval]['vvel'] for interval in sorted_intervals]
+                other_counts = [interval_counts[interval]['other'] for interval in sorted_intervals]
+                
+                # Create stacked bar chart
+                bars_vvel = ax.bar(sorted_intervals, vvel_counts, color='#FF0000', alpha=0.7, label='Vespa velutina')
+                bars_other = ax.bar(sorted_intervals, other_counts, bottom=vvel_counts, color='#808080', alpha=0.7, label='Other species')
+                
+                # Add count labels on top of bars
+                for i, (vvel, other) in enumerate(zip(vvel_counts, other_counts)):
+                    total = vvel + other
+                    if total > 0:  # Only add label if there are detections
+                        ax.text(i, total, f'{total}',
+                                ha='center', va='bottom')
+                
+                ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
+                ax.set_ylabel('Number of Detections')
+                ax.set_title(f'Detections per {interval_minutes} Minute{"s" if interval_minutes > 1 else ""}')
+                
+                # Add legend
+                ax.legend(loc='upper right')
+                
+                # Rotate x-axis labels for better readability
+                plt.xticks(rotation=45, ha='right')
+                
+                # Add grid for better readability
+                ax.grid(True, linestyle='--', alpha=0.3)
                 
                 # Adjust layout to prevent label cutoff
                 plt.tight_layout()
             else:
                 # Show empty chart with message
-                ax.text(0.5, 0.5, 'No timeline data yet', 
+                ax.text(0.5, 0.5, 'No detection data yet', 
                         horizontalalignment='center',
                         verticalalignment='center',
                         transform=ax.transAxes)
