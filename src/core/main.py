@@ -27,6 +27,48 @@ def main():
         
         # Create and run GUI
         app = vespcvGUI(config)
+        
+        # Set up proper shutdown handling
+        def on_closing():
+            try:
+                logger.info("Starting application shutdown...")
+                
+                # Stop detection if running
+                if app.is_detecting:
+                    logger.info("Stopping detection...")
+                    app.stop_detection()
+                
+                # Shutdown detector
+                if hasattr(app, 'detector'):
+                    logger.info("Shutting down detector...")
+                    app.detector.shutdown()
+                
+                # Clean up any remaining resources
+                logger.info("Cleaning up resources...")
+                for handler in app._cleanup_handlers:
+                    handler()
+                
+                # Destroy the window and quit
+                logger.info("Destroying window...")
+                app.destroy()
+                
+                # Force quit the application
+                logger.info("Quitting application...")
+                app.quit()
+                
+                # Exit the process
+                import sys
+                sys.exit(0)
+            except Exception as e:
+                logger.critical(f"Error during application shutdown: {e}")
+                # Force quit even if there's an error
+                app.quit()
+                sys.exit(1)
+        
+        # Set the protocol handler
+        app.protocol("WM_DELETE_WINDOW", on_closing)
+        
+        # Start the main loop
         app.mainloop()
     except Exception as e:
         logger.critical(f"Application failed to start: {e}")

@@ -80,13 +80,13 @@ def save_annotated_image(image, results, config):
                     class_name = class_names[class_id]
 
                     # Draw bounding box
-                    cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 0, 255), 10)
+                    cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 255, 0), 10)
                     label = f'{class_name} {box.conf[0]:.2f}'
                     
                     # Draw label
                     text_y = y1 - 10 if y1 - 10 > 10 else y1 + 10
                     cv2.putText(annotated_image, label, (x1, int(text_y)), 
-                              cv2.FONT_HERSHEY_SIMPLEX, 15.0, (255, 255, 255), 15)
+                              cv2.FONT_HERSHEY_SIMPLEX, 15.0, (0, 255, 0), 15)
 
             # Save the annotated image with the consistent name
             output_path = os.path.join(config.get('images_folder'), 'image_after_inference.jpg')
