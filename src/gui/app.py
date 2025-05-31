@@ -20,9 +20,21 @@ class ImageHandler:
         self.logger = logger
         self._image_cache = {}
         self._lock = Lock()
+        # Original camera resolution
+        self.original_width = 4656
+        self.original_height = 3496
+        self.aspect_ratio = self.original_width / self.original_height  # Should be ~1.33 (4:3)
     
     def load_and_resize_image(self, image_path: str, target_size: tuple) -> Optional[Image.Image]:
-        """Load and resize an image while maintaining aspect ratio."""
+        """Load and resize an image while maintaining aspect ratio.
+        
+        Args:
+            image_path: Path to the image file
+            target_size: (width, height) tuple for the target size
+            
+        Returns:
+            PIL.Image.Image or None if loading fails
+        """
         try:
             abs_path = os.path.abspath(image_path)
             if not os.path.exists(abs_path):
@@ -31,7 +43,22 @@ class ImageHandler:
                 
             with self._lock:
                 img = Image.open(abs_path)
-                img.thumbnail(target_size, Image.Resampling.LANCZOS)
+                
+                # Calculate new dimensions maintaining aspect ratio
+                target_width, target_height = target_size
+                img_width, img_height = img.size
+                
+                # Calculate scaling factor based on the limiting dimension
+                width_ratio = target_width / img_width
+                height_ratio = target_height / img_height
+                scale_factor = min(width_ratio, height_ratio)
+                
+                # Calculate new dimensions
+                new_width = int(img_width * scale_factor)
+                new_height = int(img_height * scale_factor)
+                
+                # Resize image
+                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
                 return img
         except Exception as e:
             self.logger.error(f"Error loading image: {e}")
@@ -80,6 +107,9 @@ class vespcvGUI(tk.Tk):
         # Start detection on launch
         self.start_detection()
 
+        # Add a new attribute to store the latest image path
+        self.latest_image_path = None
+
     def _init_components(self):
         """Initialize all GUI components."""
         # Initialize image queue and handlers
@@ -123,63 +153,32 @@ class vespcvGUI(tk.Tk):
         self.create_right_panel(right_frame)
 
     def create_left_panel(self, parent_frame):
-        # This method will contain the Captured Image and Charts
+        """Create the left panel with live feed and charts."""
+        # Captured Image section
+        self.live_feed_frame = ttk.LabelFrame(parent_frame, text="Vastgelegde afbeelding")
+        self.live_feed_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
+        self.live_feed_canvas = tk.Canvas(self.live_feed_frame, bg="gray")
+        self.live_feed_canvas.pack()
+        self.live_feed_frame.bind('<Configure>', self.on_live_feed_frame_resize)
 
-        # Captured Image section (takes up the top part of the left panel)
-        live_feed_frame = ttk.LabelFrame(parent_frame, text="Vastgelegde afbeelding") # Captured image
-        live_feed_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
-
-        # Placeholder for the captured image display (using a Canvas)
-        self.live_feed_canvas = tk.Canvas(live_feed_frame, bg="gray", width=400, height=300)  # Set a fixed size
-        self.live_feed_canvas.pack(expand=True, fill=tk.BOTH)
-
-        # Charts section (takes up the bottom part of the left panel)
-        charts_frame = ttk.Frame(parent_frame) # Frame to hold the two charts side-by-side
+        # Charts section
+        charts_frame = ttk.Frame(parent_frame)
         charts_frame.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH, padx=5, pady=5)
 
-        # Add placeholder methods for the individual charts within the charts_frame
-        self.create_insect_count_chart(charts_frame) # Bar chart
-        self.create_detection_timeline_chart(charts_frame) # Line chart
+        self.create_insect_count_chart(charts_frame)
+        self.create_detection_timeline_chart(charts_frame)
 
     def create_insect_count_chart(self, parent_frame):
-        # This method will create the Insect Detection Count bar chart
-        bar_chart_frame = ttk.LabelFrame(parent_frame, text="Insecten detectie teller")
-        bar_chart_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5) # Pack to the left in the charts_frame
-
-        # Create a matplotlib figure and axes
-        fig, ax = plt.subplots(figsize=(4, 3)) # Adjust figsize as needed
-
-        # Placeholder data (replace with real data later)
-        insects = ['vvel', 'vcra', 'amel', 'vesp', 'zon']
-        counts = [12, 8, 5, 15, 0]
-        ax.bar(insects, counts, color='#FFA000') # Use a color that fits your scheme
-        ax.set_ylabel('Count')
-
-        # Embed the matplotlib figure in the Tkinter widget
-        canvas = FigureCanvasTkAgg(fig, master=bar_chart_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH)
+        """Create the insect count bar chart frame."""
+        self.bar_chart_frame = ttk.LabelFrame(parent_frame, text="Insecten detectie teller")
+        self.bar_chart_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
+        self.redraw_insect_count_chart()
 
     def create_detection_timeline_chart(self, parent_frame):
-        # This method will create the Detection Timeline line chart
-        line_chart_frame = ttk.LabelFrame(parent_frame, text="Detectie tijdlijn")
-        line_chart_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5) # Pack to the left in the charts_frame, next to the bar chart
-
-        # Create a matplotlib figure and axes
-        fig, ax = plt.subplots(figsize=(4, 3)) # Adjust figsize as needed (same as bar chart for consistency)
-
-        # Placeholder data (replace with real data later)
-        times = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00']
-        detections = [2, 1, 0, 3, 5, 2]
-        ax.plot(times, detections, color='#FFA000', marker='o') # Use a color that fits your scheme and add markers
-        ax.set_ylabel('Detections')
-        ax.set_title('Detection Timeline')
-        ax.tick_params(axis='x', rotation=45) # Rotate x-axis labels if they overlap
-
-        # Embed the matplotlib figure in the Tkinter widget
-        canvas = FigureCanvasTkAgg(fig, master=line_chart_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH)
+        """Create the detection timeline chart frame."""
+        self.timeline_chart_frame = ttk.LabelFrame(parent_frame, text="Detectie tijdlijn")
+        self.timeline_chart_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
+        self.redraw_detection_timeline_chart()
 
     def create_right_panel(self, parent_frame):
         # This method will contain Saved Detections and Logs
@@ -292,15 +291,25 @@ class vespcvGUI(tk.Tk):
             # Update live feed
             image_path = result.get("image_path")
             if image_path and os.path.exists(image_path):
+                self.latest_image_path = image_path
                 self.update_live_feed(image_path)
 
             # Update logs
             detection = result.get("detection", {})
-            log_entry = (
-                f"{detection.get('timestamp', '')} - "
-                f"Class: {detection.get('class', '')}, "
-                f"Confidence: {detection.get('confidence', '')}\n"
-            )
+            detected_class = detection.get("class", "")
+            confidence = detection.get("confidence", "")
+            timestamp = detection.get("timestamp", "")
+            
+            # Format log entry based on detection status
+            if detected_class == "no_detection":
+                log_entry = f"{timestamp} - No detections\n"
+            else:
+                log_entry = (
+                    f"{timestamp} - "
+                    f"Class: {detected_class}, "
+                    f"Confidence: {confidence}\n"
+                )
+            
             self.log_text.config(state='normal')
             self.log_text.insert('end', log_entry)
             self.log_text.see('end')
@@ -318,7 +327,10 @@ class vespcvGUI(tk.Tk):
             # Update detection counts
             if not hasattr(self, 'detection_counts'):
                 self.detection_counts = {}
-            self.detection_counts[detected_class] = self.detection_counts.get(detected_class, 0) + 1
+            
+            # Only increment count for actual detections
+            if detected_class != "no_detection":
+                self.detection_counts[detected_class] = self.detection_counts.get(detected_class, 0) + 1
 
             # Update timeline data
             if not hasattr(self, 'detection_timeline'):
@@ -332,27 +344,34 @@ class vespcvGUI(tk.Tk):
     def update_live_feed(self, image_path: str) -> None:
         """Update the live feed canvas with the new image."""
         with self.image_lock:
-            for attempt in range(3):
-                try:
-                    img = Image.open(image_path)
-                    img.thumbnail((400, 300))
-                    photo = ImageTk.PhotoImage(img)
-                    self.live_feed_canvas.delete("all")
-                    self.live_feed_canvas.create_image(0, 0, anchor=tk.NW, image=photo)
-                    self.live_feed_canvas.image = photo
-                    self.update()
-                    break  # Success!
-                except Exception as e:
-                    self.logger.error(f"Failed to update live feed (attempt {attempt+1}): {e}")
-                    time.sleep(0.2)  # Wait a bit and try again
+            canvas_width = self.live_feed_canvas.winfo_width()
+            canvas_height = self.live_feed_canvas.winfo_height()
+            img = self.image_handler.load_and_resize_image(
+                image_path,
+                (canvas_width, canvas_height)
+            )
+            if img:
+                photo = ImageTk.PhotoImage(img)
+                self.live_feed_canvas.delete("all")
+                self.live_feed_canvas.create_image(
+                    canvas_width // 2, canvas_height // 2, anchor=tk.CENTER, image=photo
+                )
+                self.live_feed_canvas.image = photo
 
     def show_captured_image(self):
-        image_path = '/home/vcv/vespcv/data/images/image_after_inference.jpg'
-        time.sleep(0.5)  # Add a 0.5 second delay to avoid file write/read race
+        """Show the most recently captured image."""
+        image_path = os.path.join(self.config['images_folder'], 'image_after_inference.jpg')
+        time.sleep(0.5)  # Add a small delay to avoid file write/read race
         if os.path.exists(image_path):
             self.update_live_feed(image_path)
         else:
             self.live_feed_canvas.delete("all")
+            self.live_feed_canvas.create_text(
+                self.live_feed_canvas.winfo_width() // 2,
+                self.live_feed_canvas.winfo_height() // 2,
+                text="No image available",
+                fill="white"
+            )
 
     def __del__(self):
         """Cleanup when the GUI is destroyed."""
@@ -362,13 +381,106 @@ class vespcvGUI(tk.Tk):
             self.detector.shutdown()
 
     def redraw_insect_count_chart(self):
-        # Example: clear and redraw the bar chart with updated self.detection_counts
-        # (You may need to store the Figure and Axes as self attributes)
-        pass
+        """Redraw the insect count bar chart with current data."""
+        try:
+            # Clear the existing chart
+            for widget in self.bar_chart_frame.winfo_children():
+                widget.destroy()
+
+            # Create new figure and axes
+            fig, ax = plt.subplots(figsize=(4, 3))
+            
+            if hasattr(self, 'detection_counts') and self.detection_counts:
+                # Get data for plotting
+                classes = list(self.detection_counts.keys())
+                counts = list(self.detection_counts.values())
+                
+                # Create bar chart
+                ax.bar(classes, counts, color='#FFA000')
+                ax.set_ylabel('Count')
+                ax.set_title('Insect Detection Count')
+                
+                # Rotate x-axis labels if needed
+                plt.xticks(rotation=45, ha='right')
+                
+                # Adjust layout
+                plt.tight_layout()
+            else:
+                # Show empty chart with message
+                ax.text(0.5, 0.5, 'No detections yet', 
+                       horizontalalignment='center',
+                       verticalalignment='center',
+                       transform=ax.transAxes)
+
+            # Embed in Tkinter
+            canvas = FigureCanvasTkAgg(fig, master=self.bar_chart_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH)
+            
+        except Exception as e:
+            self.logger.error(f"Error redrawing insect count chart: {e}")
 
     def redraw_detection_timeline_chart(self):
-        # Example: clear and redraw the timeline chart with updated self.detection_timeline
-        pass
+        """Redraw the detection timeline chart with current data."""
+        try:
+            # Clear the existing chart
+            for widget in self.timeline_chart_frame.winfo_children():
+                widget.destroy()
+
+            # Create new figure and axes
+            fig, ax = plt.subplots(figsize=(4, 3))
+            
+            if hasattr(self, 'detection_timeline') and self.detection_timeline:
+                # Extract data
+                timestamps = [t[0] for t in self.detection_timeline]
+                classes = [t[1] for t in self.detection_timeline]
+                
+                # Create timeline plot
+                ax.plot(range(len(timestamps)), [1 if c != "no_detection" else 0 for c in classes], 
+                       color='#FFA000', marker='o')
+                ax.set_ylabel('Detection')
+                ax.set_title('Detection Timeline')
+                
+                # Format x-axis
+                ax.set_xticks(range(len(timestamps)))
+                ax.set_xticklabels([t.split('-')[1] for t in timestamps], rotation=45, ha='right')
+                
+                # Adjust layout
+                plt.tight_layout()
+            else:
+                # Show empty chart with message
+                ax.text(0.5, 0.5, 'No timeline data yet', 
+                       horizontalalignment='center',
+                       verticalalignment='center',
+                       transform=ax.transAxes)
+
+            # Embed in Tkinter
+            canvas = FigureCanvasTkAgg(fig, master=self.timeline_chart_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH)
+            
+        except Exception as e:
+            self.logger.error(f"Error redrawing timeline chart: {e}")
+
+    def on_live_feed_frame_resize(self, event):
+        # Step 3: Calculate largest 4:3 rectangle
+        frame_width = event.width
+        frame_height = event.height
+        aspect = 4 / 3
+
+        if frame_width / aspect <= frame_height:
+            new_width = frame_width
+            new_height = int(frame_width / aspect)
+        else:
+            new_height = frame_height
+            new_width = int(frame_height * aspect)
+
+        # Step 4: Resize canvas
+        self.live_feed_canvas.config(width=new_width, height=new_height)
+
+        # Step 5: Redraw image
+        if self.latest_image_path:
+            self.update_live_feed(self.latest_image_path)
 
 if __name__ == "__main__":
     app = vespcvGUI()

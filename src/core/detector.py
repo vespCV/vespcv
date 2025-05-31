@@ -6,8 +6,10 @@ Handles YOLO model loading, image capture, and object detection.
 import os
 import time
 import threading
+
 import cv2
 from ultralytics import YOLO
+
 from src.utils.detection_utils import capture_image
 from src.core.logger import logger
 
@@ -142,19 +144,21 @@ class DetectionController:
                     class_3_detected = True
                 max_conf = max(max_conf, conf)
 
-        if not detected_classes:
-            return None
-
-        # Determine final class
-        if class_3_detected:
-            final_class = "vvel"
+        # Determine final class and confidence
+        if detected_classes:
+            if class_3_detected:
+                final_class = "vvel"
+            else:
+                most_detected = max(detected_classes.items(), key=lambda x: x[1])
+                final_class = self.config['class_names'][most_detected[0]]
+            confidence = f"{max_conf:.2f}"
         else:
-            most_detected = max(detected_classes.items(), key=lambda x: x[1])
-            final_class = self.config['class_names'][most_detected[0]]
+            final_class = "no_detection"
+            confidence = "0.00"
 
         return {
             "class": final_class,
-            "confidence": f"{max_conf:.2f}",
+            "confidence": confidence,
             "timestamp": time.strftime("%Y%m%d-%H%M%S")
         }
 
