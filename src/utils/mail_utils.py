@@ -8,6 +8,28 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 from src.core.logger import logger
+import tkinter as tk
+from tkinter import messagebox
+
+def check_email_credentials():
+    """Check if email credentials are properly set in environment variables.
+    
+    Returns:
+        tuple: (bool, str) - (credentials_valid, error_message)
+    """
+    sender_email = os.getenv("EMAIL_USER")
+    password = os.getenv("EMAIL_PASS")
+    
+    if not sender_email or not password:
+        error_msg = (
+            "Email credentials not found in environment variables.\n\n"
+            "Please add the following to your ~/.bashrc file:\n\n"
+            'export EMAIL_USER="your_email@gmail.com"\n'
+            'export EMAIL_PASS="your_email_password"\n\n'
+            "Then run: source ~/.bashrc"
+        )
+        return False, error_msg
+    return True, ""
 
 def send_warning_email(subject, body, annotated_image_path, non_annotated_image_path):
     """Send a warning email with detection images.
@@ -17,16 +39,22 @@ def send_warning_email(subject, body, annotated_image_path, non_annotated_image_
         body (str): Email body text
         annotated_image_path (str): Path to the annotated image
         non_annotated_image_path (str): Path to the non-annotated image
+        
+    Returns:
+        bool: True if email was sent successfully, False otherwise
     """
     try:
+        # Check credentials first
+        credentials_valid, error_msg = check_email_credentials()
+        if not credentials_valid:
+            logger.error(error_msg)
+            messagebox.showerror("Email Configuration Error", error_msg)
+            return False
+
         # Get email credentials from environment variables
         sender_email = os.getenv("EMAIL_USER")
         password = os.getenv("EMAIL_PASS")
-        receiver_email = os.getenv("EMAIL_RECIPIENT", "recipient_email@example.com")
-
-        if not sender_email or not password:
-            logger.error("Email credentials not found in environment variables")
-            return
+        receiver_email = os.getenv("EMAIL_RECIPIENT", sender_email)  # Default to sender if no recipient specified
 
         # Create the email
         msg = MIMEMultipart()
@@ -56,6 +84,10 @@ def send_warning_email(subject, body, annotated_image_path, non_annotated_image_
             server.login(sender_email, password)
             server.send_message(msg)
             logger.info("Warning email sent successfully")
+            return True
 
     except Exception as e:
-        logger.error(f"Failed to send warning email: {e}")
+        error_msg = f"Failed to send warning email: {str(e)}"
+        logger.error(error_msg)
+        messagebox.showerror("Email Error", error_msg)
+        return False

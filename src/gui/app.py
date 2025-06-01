@@ -422,12 +422,11 @@ class vespcvGUI(tk.Tk):
                     
                     # Send the email
                     from src.utils.mail_utils import send_warning_email
-                    send_warning_email(subject, body, annotated_image_path, non_annotated_image_path)
-                    
-                    # Update button state and flag
-                    self.mail_button.configure(style='LED.TButton')  # Change back to gray
-                    self.email_sent = True
-                    self.logger.info("Warning email sent for vvel detection")
+                    if send_warning_email(subject, body, annotated_image_path, non_annotated_image_path):
+                        # Only update button state and flag if email was sent successfully
+                        self.mail_button.configure(style='LED.TButton')  # Change back to gray
+                        self.email_sent = True
+                        self.logger.info("Warning email sent for vvel detection")
                 except Exception as e:
                     self.logger.error(f"Failed to send warning email: {e}")
 
