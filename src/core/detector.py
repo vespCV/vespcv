@@ -12,13 +12,15 @@ from ultralytics import YOLO
 
 from src.utils.detection_utils import capture_image, save_annotated_image, save_original_image, save_archived_image
 from src.core.logger import logger
+from src.utils.led_controller import LEDController
 
 class DetectionController:
-    def __init__(self, result_callback):
+    def __init__(self, result_callback, led_controller=None):
         """Initialize the detection controller.
         
         Args:
             result_callback: Function to call with detection results
+            led_controller: Optional LEDController instance. If None, creates a new one.
         """
         self._thread = None
         self._stop_event = threading.Event()
@@ -28,6 +30,9 @@ class DetectionController:
         # Load config and model
         self.config = self._load_config()
         self.model = self._create_model()
+        
+        # Initialize LED controller
+        self.led_controller = led_controller if led_controller is not None else LEDController()
 
     def _load_config(self):
         """Load the configuration."""
@@ -60,6 +65,7 @@ class DetectionController:
         """Stop the detection process."""
         self._pause_event.set()
         logger.info("Detection paused")
+        self.led_controller.cleanup()
 
     def is_running(self):
         """Check if detection is currently running."""
@@ -78,6 +84,10 @@ class DetectionController:
                 result = self._process_single_frame()
                 if result:
                     self.result_callback(result)
+                    
+                # Check if LED needs to be turned off
+                self.led_controller.check_and_turn_off()
+                
             except Exception as e:
                 logger.error("Error in detection loop: %s", e)
 
@@ -106,6 +116,10 @@ class DetectionController:
             detections = self._process_detections(results, img)
             if not detections:
                 return None
+
+            # Handle LED for valid detections
+            if detections.get("class") == "vvel":
+                self.led_controller.handle_detection()
 
             # Save original image with detection metadata and YOLO results
             original_path = save_original_image(self.config, detections, results)

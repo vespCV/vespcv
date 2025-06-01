@@ -26,3 +26,8 @@ capture_interval: 15
 
 # Chart interval in minutes for grouping detections
 chart_interval: 15
+
+# LED Configuration
+led:
+  pin: 21  # GPIO pin number for the LED
+  on_duration: 3  # Duration in seconds that the LED stays on after detection

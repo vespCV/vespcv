@@ -14,6 +14,7 @@ from threading import Lock
 from typing import Optional, List, Dict
 import numpy as np
 from src.core.detector import DetectionController
+from src.utils.led_controller import LEDController
 from datetime import datetime, timedelta
 
 class ImageHandler:
@@ -99,18 +100,28 @@ class vespcvGUI(tk.Tk):
         style.configure('Red.TButton', background='red', foreground='black')
         style.configure('Orange.TButton', background='orange', foreground='black')
         style.configure('Green.TButton', background='green', foreground='black')
+        style.configure('LED.TButton', background='gray', foreground='black')
 
+        # Initialize LED controller in simulation mode
+        self.led_controller = LEDController(simulation_mode=True)
+        
         # Initialize components
         self._init_components()
         
-        # Initialize detection controller
-        self.detector = DetectionController(self.handle_detection_result)
+        # Initialize detection controller with our LED controller
+        self.detector = DetectionController(self.handle_detection_result, self.led_controller)
         
         # Start detection on launch
         self.start_detection()
 
         # Add a new attribute to store the latest image path
         self.latest_image_path = None
+        
+        # Start LED status update
+        self._update_led_status()
+
+        # Start LED timer
+        self._start_led_timer()
 
     def _init_components(self):
         """Initialize all GUI components."""
@@ -134,9 +145,25 @@ class vespcvGUI(tk.Tk):
         # Add the main title
         ttk.Label(header_frame, text="Aziatisch-/Geelpotige Hoornaar Detector", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
         
-        # Create buttons with their respective commands
-        ttk.Button(header_frame, text="STOP DETECTIE", style='Orange.TButton', command=self.stop_detection).pack(side=tk.RIGHT, padx=2) 
-        ttk.Button(header_frame, text="START DETECTIE", style='Green.TButton', command=self.start_detection).pack(side=tk.RIGHT, padx=2)
+        # Create LED control frame
+        led_frame = ttk.Frame(header_frame)
+        led_frame.pack(side=tk.RIGHT, padx=10)
+        
+        # Create LED indicator
+        self.led_indicator = ttk.Label(led_frame, text="●", font=("Arial", 24))
+        self.led_indicator.pack(side=tk.LEFT, padx=5)
+        self._update_led_indicator()
+        
+        # Create LED toggle button
+        self.led_button = ttk.Button(led_frame, text="GPIO", style='LED.TButton', 
+                                   command=self.toggle_led_control)
+        self.led_button.pack(side=tk.LEFT, padx=5)
+        
+        # Create detection control buttons
+        ttk.Button(header_frame, text="STOP DETECTIE", style='Orange.TButton', 
+                  command=self.stop_detection).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(header_frame, text="START DETECTIE", style='Green.TButton', 
+                  command=self.start_detection).pack(side=tk.RIGHT, padx=2)
 
     def create_main_content(self):
         # Main area with live feed, detections, and charts
@@ -378,6 +405,9 @@ class vespcvGUI(tk.Tk):
 
             # Refresh saved detections
             self.refresh_saved_detections()
+
+            # Immediately update the LED indicator after a detection
+            self._update_led_indicator()
         except Exception as e:
             self.logger.error(f"Error updating GUI: {e}")
 
@@ -477,6 +507,8 @@ class vespcvGUI(tk.Tk):
             handler()
         if hasattr(self, 'detector'):
             self.detector.shutdown()
+        if hasattr(self, 'led_controller'):
+            self.led_controller.cleanup()
 
     def redraw_combined_chart(self):
         """Redraw the detection timeline chart showing counts per configured interval."""
@@ -655,6 +687,59 @@ class vespcvGUI(tk.Tk):
             widget.destroy()
         # Rebuild the section
         self.create_saved_detections_section(self.saved_detections_frame)
+
+    def toggle_led_control(self):
+        """Toggle between GPIO ON (red) and OFF (gray)."""
+        try:
+            # Toggle enabled state on the existing LEDController
+            new_enabled = not self.led_controller.enabled
+            self.led_controller.set_enabled(new_enabled)
+            self.detector.led_controller = self.led_controller
+            
+            # Update button style
+            if self.led_controller.enabled:
+                self.led_button.configure(style='Red.TButton')  # red (GPIO ON)
+                self.logger.info("GPIO ACTIVATION ON (harp armed)")
+            else:
+                self.led_button.configure(style='LED.TButton')  # gray (GPIO OFF)
+                self.logger.info("GPIO ACTIVATION OFF (harp disarmed)")
+            
+            # Immediately update indicator
+            self._update_led_indicator()
+        except Exception as e:
+            self.logger.error(f"Error toggling LED control: {e}")
+            self.led_controller.set_enabled(False)
+            self.detector.led_controller = self.led_controller
+            self.led_button.configure(style='LED.TButton')
+            self._update_led_indicator()
+
+    def _update_led_status(self):
+        """Update LED status periodically."""
+        try:
+            self._update_led_indicator()
+        except Exception as e:
+            self.logger.error(f"Error updating LED status: {e}")
+        finally:
+            # Schedule next update
+            self.after(100, self._update_led_status)
+
+    def _update_led_indicator(self):
+        """Update the LED indicator color based on current status and GPIO enabled state."""
+        try:
+            status = self.led_controller.get_status()
+            self.logger.debug(f"Updating LED indicator, status: {status}, enabled: {self.led_controller.enabled}")
+            if status:
+                self.led_indicator.configure(foreground='yellow')
+            else:
+                self.led_indicator.configure(foreground='gray')
+        except Exception as e:
+            self.logger.error(f"Error updating LED indicator: {e}")
+
+    def _start_led_timer(self):
+        """Start a periodic timer to check and turn off the LED."""
+        self.led_controller.check_and_turn_off()
+        self._update_led_indicator()
+        self.after(500, self._start_led_timer)
 
 if __name__ == "__main__":
     app = vespcvGUI()
