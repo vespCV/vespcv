@@ -16,6 +16,7 @@ import numpy as np
 from src.core.detector import DetectionController
 from src.utils.led_controller import LEDController
 from datetime import datetime, timedelta
+from src.utils.mail_utils import send_warning_email  # Import the email function
 
 class ImageHandler:
     def __init__(self, logger):
@@ -101,10 +102,15 @@ class vespcvGUI(tk.Tk):
         style.configure('Orange.TButton', background='orange', foreground='black')
         style.configure('Green.TButton', background='green', foreground='black')
         style.configure('LED.TButton', background='gray', foreground='black')
+        style.configure('Blue.TButton', background='blue', foreground='white')  # Add blue style
+        style.configure('Yellow.TButton', background='yellow', foreground='black')
 
         # Initialize LED controller in simulation mode
         self.led_controller = LEDController(simulation_mode=True)
         
+        # Initialize a flag to track if the email has been sent
+        self.email_sent = False
+
         # Initialize components
         self._init_components()
         
@@ -138,32 +144,27 @@ class vespcvGUI(tk.Tk):
         self.create_control_frame()
 
     def create_header(self):
-        # This method will create the header section
+        """Create the header section."""
         header_frame = ttk.Frame(self)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Add the main title
         ttk.Label(header_frame, text="Aziatisch-/Geelpotige Hoornaar Detector", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
-        
-        # Create LED control frame
-        led_frame = ttk.Frame(header_frame)
-        led_frame.pack(side=tk.RIGHT, padx=10)
-        
-        # Create LED indicator
-        self.led_indicator = ttk.Label(led_frame, text="●", font=("Arial", 24))
-        self.led_indicator.pack(side=tk.LEFT, padx=5)
+
+        # Add START, STOP, MAIL, GPIO, LED (left to right)
+        self.start_button = ttk.Button(header_frame, text="START", style='Green.TButton', command=self.start_detection)
+        self.start_button.pack(side=tk.LEFT, padx=2)
+        self.stop_button = ttk.Button(header_frame, text="STOP", style='Orange.TButton', command=self.stop_detection)
+        self.stop_button.pack(side=tk.LEFT, padx=2)
+        self.mail_button = ttk.Button(header_frame, text="MAIL", style='LED.TButton', command=self.toggle_mail_alert)
+        self.mail_button.pack(side=tk.LEFT, padx=2)
+        self.led_button = ttk.Button(header_frame, text="GPIO", style='LED.TButton', command=self.toggle_led_control)
+        self.led_button.pack(side=tk.LEFT, padx=2)
+
+        # LED indicator (use tk.Label for color control)
+        self.led_indicator = tk.Label(header_frame, text="●", font=("Arial", 24, "bold"), fg="black", bg="#FFF8E1")
+        self.led_indicator.pack(side=tk.LEFT, padx=8)
         self._update_led_indicator()
-        
-        # Create LED toggle button
-        self.led_button = ttk.Button(led_frame, text="GPIO", style='LED.TButton', 
-                                   command=self.toggle_led_control)
-        self.led_button.pack(side=tk.LEFT, padx=5)
-        
-        # Create detection control buttons
-        ttk.Button(header_frame, text="STOP DETECTIE", style='Orange.TButton', 
-                  command=self.stop_detection).pack(side=tk.RIGHT, padx=2)
-        ttk.Button(header_frame, text="START DETECTIE", style='Green.TButton', 
-                  command=self.start_detection).pack(side=tk.RIGHT, padx=2)
 
     def create_main_content(self):
         # Main area with live feed, detections, and charts
@@ -405,6 +406,30 @@ class vespcvGUI(tk.Tk):
 
             # Refresh saved detections
             self.refresh_saved_detections()
+
+            # Check for vvel detection and send email if mail alert is active
+            if (detected_class == "vvel" and 
+                not self.email_sent and 
+                self.mail_button.cget('style') == 'Blue.TButton'):
+                try:
+                    # Prepare email details
+                    subject = "Vespa velutina detected"
+                    body = f"Dear vespCV user,\n\nA Vespa velutina has been detected on {timestamp} with confidence {confidence}.\n\nBest regards,\nvespCV System"
+                    
+                    # Get the paths of the images
+                    annotated_image_path = annotated_path
+                    non_annotated_image_path = os.path.join(self.config['images_folder'], 'image_for_detection.jpg')
+                    
+                    # Send the email
+                    from src.utils.mail_utils import send_warning_email
+                    send_warning_email(subject, body, annotated_image_path, non_annotated_image_path)
+                    
+                    # Update button state and flag
+                    self.mail_button.configure(style='LED.TButton')  # Change back to gray
+                    self.email_sent = True
+                    self.logger.info("Warning email sent for vvel detection")
+                except Exception as e:
+                    self.logger.error(f"Failed to send warning email: {e}")
 
             # Immediately update the LED indicator after a detection
             self._update_led_indicator()
@@ -696,14 +721,6 @@ class vespcvGUI(tk.Tk):
             self.led_controller.set_enabled(new_enabled)
             self.detector.led_controller = self.led_controller
             
-            # Update button style
-            if self.led_controller.enabled:
-                self.led_button.configure(style='Red.TButton')  # red (GPIO ON)
-                self.logger.info("GPIO ACTIVATION ON (harp armed)")
-            else:
-                self.led_button.configure(style='LED.TButton')  # gray (GPIO OFF)
-                self.logger.info("GPIO ACTIVATION OFF (harp disarmed)")
-            
             # Immediately update indicator
             self._update_led_indicator()
         except Exception as e:
@@ -724,14 +741,18 @@ class vespcvGUI(tk.Tk):
             self.after(100, self._update_led_status)
 
     def _update_led_indicator(self):
-        """Update the LED indicator color based on current status and GPIO enabled state."""
+        """Update the LED indicator color and GPIO button style based on current status."""
         try:
             status = self.led_controller.get_status()
-            self.logger.debug(f"Updating LED indicator, status: {status}, enabled: {self.led_controller.enabled}")
             if status:
-                self.led_indicator.configure(foreground='yellow')
+                self.led_indicator.config(fg='yellow')
+                self.led_button.configure(style='Yellow.TButton')  # GPIO ON (after detection)
             else:
-                self.led_indicator.configure(foreground='gray')
+                self.led_indicator.config(fg='black')
+                if self.led_controller.enabled:
+                    self.led_button.configure(style='Red.TButton')  # GPIO armed, but not ON
+                else:
+                    self.led_button.configure(style='LED.TButton')  # GPIO OFF (gray)
         except Exception as e:
             self.logger.error(f"Error updating LED indicator: {e}")
 
@@ -740,6 +761,42 @@ class vespcvGUI(tk.Tk):
         self.led_controller.check_and_turn_off()
         self._update_led_indicator()
         self.after(500, self._start_led_timer)
+
+    def on_mail_button_click(self):
+        """Handle the MAIL button click event."""
+        if not self.email_sent:  # Check if the email has already been sent
+            # Assuming you have a method to check for vvel detection
+            if self.detector.is_vvel_detected():  # Replace with your actual detection check
+                # Change button color to blue
+                self.mail_button.config(style='Red.TButton')  # Change to blue style
+                # Prepare email details
+                subject = "Vespa velutina detected"
+                body = f"Dear vespCV user, a Vespa velutina is detected on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}."
+                
+                # Get the paths of the annotated and non-annotated images
+                annotated_image_path = self.latest_image_path  # Assuming this is set in your detection logic
+                non_annotated_image_path = 'path/to/non_annotated_image.jpg'  # Update with your actual path
+
+                # Send the email
+                send_warning_email(subject, body, annotated_image_path, non_annotated_image_path)
+                self.email_sent = True  # Set the flag to true after sending the email
+                messagebox.showinfo("Email Sent", "The email has been sent successfully!")
+            else:
+                messagebox.showwarning("No Detection", "No Vespa velutina detected yet.")
+        else:
+            messagebox.showinfo("Email Already Sent", "The email has already been sent.")
+
+    def toggle_mail_alert(self):
+        """Toggle the mail alert functionality."""
+        if not self.email_sent:  # Only allow toggling if email hasn't been sent yet
+            if self.mail_button.cget('style') == 'LED.TButton':  # Currently gray (inactive)
+                self.mail_button.configure(style='Blue.TButton')  # Change to blue (active)
+                self.logger.info("Mail alert activated - will send email on first vvel detection")
+            else:  # Currently blue (active)
+                self.mail_button.configure(style='LED.TButton')  # Change back to gray (inactive)
+                self.logger.info("Mail alert deactivated")
+        else:
+            self.logger.info("Mail alert already sent - cannot be reactivated")
 
 if __name__ == "__main__":
     app = vespcvGUI()

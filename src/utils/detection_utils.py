@@ -9,6 +9,10 @@ from src.core.logger import logger
 from src.core.config_loader import load_config
 import time
 import json
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 
 def log_detection_data(detections, image_path):
     """Log detection data to a detections.log file in CSV format.
@@ -238,6 +242,39 @@ def save_archived_image(image, detections, config):
     except Exception as e:
         logger.error(f"Error saving archived image: {e}")
         return None
+
+def send_warning_email(subject, body, annotated_image_path, non_annotated_image_path):
+    sender_email = os.getenv("EMAIL_USER")
+    password = os.getenv("EMAIL_PASS")
+    receiver_email = "recipient_email@example.com"
+
+    # Create the email
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+
+    # Attach the email body
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Attach images
+    try:
+        with open(annotated_image_path, 'rb') as f:
+            msg.attach(MIMEImage(f.read(), name=os.path.basename(annotated_image_path)))
+        with open(non_annotated_image_path, 'rb') as f:
+            msg.attach(MIMEImage(f.read(), name=os.path.basename(non_annotated_image_path)))
+    except Exception as e:
+        print(f"Error attaching images: {e}")
+
+    try:
+        # Connect to the server
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
+            server.login(sender_email, password)  # Log in to your email account
+            server.send_message(msg)  # Send the email
+            print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 if __name__ == "__main__":
     # Test image capture
