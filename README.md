@@ -152,10 +152,7 @@ The application window is divided into several sections:
 If you encounter any issues:
 1. Check that the camera is properly connected
 2. Ensure the system has a stable internet connection for email alerts
-3. Verify that the LED indicator is working
-4. Check the detection log for any error messages
-
-For additional help, please refer to the documentation in the `doc/` folder or contact support.
+3. Check the detection log for any error messages
 
 ## Directory Structure
 The project is organized into several main directories, each serving a specific purpose:
