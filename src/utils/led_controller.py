@@ -101,13 +101,16 @@ class LEDController:
         
     def turn_off(self):
         if self.is_on or not self.enabled:
+            was_on = self.is_on  # Store the previous state
             self.is_on = False
             if self.simulation_mode:
-                logger.info("Simulated: LED OFF")
+                if was_on:  # Only log if the LED was actually on
+                    logger.info("Simulated: LED OFF")
             else:
                 try:
                     GPIO.output(self.pin, GPIO.LOW)
-                    logger.info("LED turned OFF (GPIO deactivated)")
+                    if was_on:  # Only log if the LED was actually on
+                        logger.info("LED turned OFF (GPIO deactivated)")
                 except Exception as e:
                     logger.error(f"Failed to turn off LED: {e}")
                     self.simulation_mode = True
