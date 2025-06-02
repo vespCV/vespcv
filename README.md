@@ -64,13 +64,98 @@ The following external libraries are required for the `vespCV` project:
    ```bash
    chmod +x start_vespcv
    ```
+6. Email Configuration (Optional)
+
+To receive email notifications when an Asian hornet is detected, follow these steps:
+
+   - **Create a Gmail Account**: 
+   - Create an account for your hornet detector. You can use an existing email or create a new one for safety and to avoid spam.
+
+   - **Enable Two-Factor Authentication (2FA)**: 
+   - Activate 2FA for your Gmail account to enhance security.
+
+   - **Generate an App Password**: 
+   - Create an [app password](https://support.google.com/mail/answer/185833?hl=en#:~:text=in%20or%20out-,Sign%20in%20with%20app%20passwords,-Sign%20in%20with) for your account. This password will be used instead of your regular email password.
+
+   - **Configure Email Credentials**: 
+   - Add your email address and app password to your `.bashrc` file:
+   ```bash
+   export EMAIL_USER="your_email@gmail.com"
+   export EMAIL_PASS="your_app_password"
+   ```
+
+   - **Apply Changes**: 
+   - Run the following command to apply the changes:
+   ```bash
+   source ~/.bashrc
+   ```
+
+### Important Notes:
+- Ensure that you store your email credentials securely. Using environment variables, as shown above, is a good practice.
+- The email will be sent when a Vespa velutina (vvel) is detected.
 
 ## Usage Guide
-To run the application, execute:
-```bash
-./start_vespcv
-```
-The GUI will display real-time camera feed and detection results.
+
+### Starting the Application
+1. Open a terminal window
+2. Type `./start_vespcv` and press Enter
+3. The application window will open automatically
+
+### Understanding the Interface
+The application window is divided into several sections:
+
+1. **Top Bar**
+   - **START** (Green button): Starts the hornet detection
+   - **STOP** (Orange button): Pauses the detection
+   - **MAIL** (Gray/Blue button): Toggles email alerts for hornet detections
+   - **GPIO** (Gray button): Controls the LED indicator (mockup for hornet trap or electric harp)
+   - **LED Indicator** (●): Shows the current status of the detection system
+
+2. **Main Screen**
+   - **Left Panel**:
+     - Shows the latest captured image with detection results
+     - Detection chart displaying Asian hornet activity (red bars) and other insects (gray bars) over time
+   - **Right Panel**:
+     - Recent detections (click any image to save it to your desktop)
+     - Detection log showing detections and system activity
+
+### Using the System
+
+1. **Starting Detection**
+   - Detection starts automatically when the application launches
+   - The captured image will appear on the left side
+   - The system will automatically scan for hornets
+
+2. **Email Alerts**
+   - Click the **MAIL** button to enable email notifications
+   - When enabled, you'll receive an email when the first Asian hornet is detected (requires internet connection and email configuration)
+   - The button turns blue when email alerts are active
+
+3. **Saving Detections**
+   - When a hornet is detected, the image appears in the "Recent Detections" panel
+   - Click any detection image to save it to your desktop (requires internet connection)
+   - Images are automatically saved with date and time information in the `vespcv/data/images` folder
+
+4. **Stopping the System**
+   - Click the orange **STOP** button to pause detection
+   - To close the application, click the X in the top-right corner
+
+5. **Continuing Detection**
+   - Click the green **START** button to resume detection after stopping
+
+### Tips for Best Results
+- Ensure the camera has a clear view of the area you want to monitor
+- Keep the camera lens clean and free from obstructions
+- Position the camera in a well-lit area for better detection
+
+### Troubleshooting
+If you encounter any issues:
+1. Check that the camera is properly connected
+2. Ensure the system has a stable internet connection for email alerts
+3. Verify that the LED indicator is working
+4. Check the detection log for any error messages
+
+For additional help, please refer to the documentation in the `doc/` folder or contact support.
 
 ## Directory Structure
 The project is organized into several main directories, each serving a specific purpose:
