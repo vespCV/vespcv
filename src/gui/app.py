@@ -205,7 +205,7 @@ class vespcvGUI(tk.Tk):
         # This method will contain Saved Detections and Logs
 
         # Saved Detections section (takes up the top part of the right panel)
-        self.saved_detections_frame = ttk.LabelFrame(parent_frame, text="Opgeslagen detecties")
+        self.saved_detections_frame = ttk.LabelFrame(parent_frame, text="Opgeslagen detectie van Aziatische Hoornaar, click om te downloaden naar desktop.")
         self.saved_detections_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
         self.create_saved_detections_section(self.saved_detections_frame)
 
@@ -626,19 +626,10 @@ class vespcvGUI(tk.Tk):
                 
                 ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
                 ax.set_ylabel('Number of Detections')
-                # ax.set_title(f'Detecties per {interval_minutes} Minute{"s" if interval_minutes > 1 else ""}')
-                
-                # Add legend
+                # ax.set_title(f'Detections per {interval_minutes} Minute{plural}')  # <-- Remove or comment out this line
                 ax.legend(loc='upper right')
-                
-                # Rotate x-axis labels for better readability
-                ax.set_xticks(x)
-                ax.set_xticklabels(sorted_intervals, rotation=45, ha='right')
-                
-                # Add grid for better readability
+                plt.xticks(rotation=45, ha='right')
                 ax.grid(True, linestyle='--', alpha=0.3)
-                
-                # Adjust layout to prevent label cutoff
                 plt.tight_layout()
             else:
                 # Show the last N intervals, even if there are no detections yet
@@ -661,8 +652,7 @@ class vespcvGUI(tk.Tk):
 
                 ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
                 ax.set_ylabel('Number of Detections')
-                plural = "s" if interval_minutes > 1 else ""
-                ax.set_title(f'Detections per {interval_minutes} Minute{plural}')
+                # ax.set_title(f'Detections per {interval_minutes} Minute{plural}')
                 ax.legend(loc='upper right')
                 plt.xticks(rotation=45, ha='right')
                 ax.grid(True, linestyle='--', alpha=0.3)
