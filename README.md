@@ -1,5 +1,8 @@
 # vespCV - Asian Hornet Detection System
 
+## Overview
+The vespCV project aims to develop an automated detection system for the invasive Asian hornet (Vespa velutina). This system leverages computer vision technology to provide beekeepers and researchers with a reliable tool for monitoring and controlling hornet populations.
+
 ## Introduction
 In recent years, the invasive Asian hornet (Vespa velutina) has posed a significant threat to honeybee populations and, consequently, to our ecosystems and agriculture. The `vespCV` project aims to develop an innovative, automated detection system that empowers beekeepers, volunteers, and researchers to combat this growing challenge effectively.
 
@@ -20,58 +23,54 @@ The following external libraries are required for the `vespCV` project:
 - `torch==2.7.0`  # Ensure this is the correct version for your Raspberry Pi
 
 ## Installation Instructions
+1. Install Raspberry Pi OS Bookworm.
+2. Create a directory for the project:
+   ```bash
+   mkdir vespcv
+   cd vespcv
+   ```
+3. Clone the repository:
+   ```bash
+   git clone https://github.com/vespCV/vespcv.git
+   cd vespcv
+   ```
+4. Set up the virtual environment and install dependencies:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-### Step 1: Install Raspberry Pi OS Bookworm
-To run the `vespCV` project, you need to install Raspberry Pi OS Bookworm on your Raspberry Pi. Follow these steps:
-
-1. **Download Raspberry Pi Imager** from the official website: [Raspberry Pi Imager](https://www.raspberrypi.com/software/).
-2. **Install the Imager** on your computer.
-3. **Open the Imager**, select the Raspberry Pi OS version (choose "Raspberry Pi OS (64-bit)" for Bookworm), and follow the prompts to flash it onto your SD card.
-4. **Insert the SD card** into your Raspberry Pi and power it on. Complete the initial setup and configuration.
-
-For detailed instructions, refer to this guide: [Install Raspberry Pi OS](https://raspberrytips.com/install-raspbian-raspberry-pi/).
-
-### Step 2: Clone the Repository
+## Usage Guide
+To run the application, execute:
 ```bash
-git clone https://github.com/vespCV/vespcv.git
-cd vespcv
+./start_vespcv
 ```
+The GUI will display real-time camera feed and detection results.
 
-### Step 3: Set Up the Virtual Environment
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+## Directory Structure
+The project is organized into several main directories, each serving a specific purpose:
 
-### Step 4: Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### Step 5: Configure the System
-- Edit the `config/config.yaml` file to set your desired parameters.
-
-## Usage Examples
-
-1. **Run the Application**:
-   - You can start the application using the provided shell script. First, ensure the script is executable:
-     ```bash
-     chmod +x ~/start_vespcv
-     ```
-   - Then, run the script:
-     ```bash
-     ./start_vespcv
-     ```
-
-2. **View Detection Results**:
-   - The GUI will display real-time camera feed and detection results.
-
-3. **Check Logs**:
-   - Logs can be found in the `data/logs/` directory for monitoring system performance and errors.
+- **`main.py`**: Entry point for the application, handling configuration loading and GUI initialization.
+- **`src/`**: Core application code, including:
+  - **`core/`**: Main detection logic and utilities.
+  - **`gui/`**: GUI components built using Tkinter.
+  - **`utils/`**: Helper functions for image processing and other utilities.
+- **`config/`**: Configuration files in YAML format.
+- **`models/`**: Stores trained model weights used for detection.
+- **`tests/`**: Contains unit and integration tests.
+- **`doc/`**: Documentation files, including the Product Requirements Document (PRD).
+- **`data/`**: Stores generated data, including images and logs.
 
 ## License
-Public License (GPL) Version 3
-This license allows users to freely use, modify, and distribute the software, provided that all copies and derivative works are also licensed under the same terms. For more details, please refer to the full license text.
+This project is licensed under the GPL Version 3. See the [LICENSE](LICENSE) file for details.
+
+## Additional Resources
+- [Raspberry Pi Documentation](https://www.raspberrypi.org/documentation/): Official documentation for Raspberry Pi.
+- [YOLOv11 Documentation](https://docs.ultralytics.com/): Documentation for the YOLOv11 model.
+- [OpenCV Documentation](https://docs.opencv.org/): Documentation for OpenCV, the library used for image processing.
+- [Python Documentation](https://docs.python.org/3/): Official Python documentation for reference on Python programming.
+- [waarnemingen.nl](https://waarneming.nl/): An official platform for reporting sightings of Asian hornets, allowing users to submit images and additional information to aid in monitoring and controlling hornet populations. 
 
 
 
