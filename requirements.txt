@@ -1,1 +1,6 @@
 ultralytics==8.3.137
+opencv-python==4.11.0.86
+numpy==2.2.5
+pandas==2.2.3
+gpiozero==1.6.2
+torch==2.7.0
