@@ -239,6 +239,33 @@ def save_archived_image(image, detections, config):
         logger.error(f"Error saving archived image: {e}")
         return None
 
+def initialize_application():
+    """Initialize all core components of the application."""
+    try:
+        # Load configuration
+        config = load_config()
+        
+        # Create necessary directories first, before any logging
+        required_dirs = [
+            os.path.dirname(config['log_file_path']),  # Create logs directory
+            config['images_folder'],                   # Create images directory
+            'data/yolo_jpg_txt'                       # Create yolo directory
+        ]
+        
+        for dir_path in required_dirs:
+            os.makedirs(dir_path, exist_ok=True)
+            print(f"Created directory: {dir_path}")  # Use print instead of logger since logger isn't configured yet
+        
+        # Now that directories exist, configure logging
+        configure_logger(config['log_file_path'])
+        start_temperature_logging()
+        
+        logger.info("Application initialized successfully")
+        return config
+    except Exception as e:
+        print(f"Failed to initialize application: {e}")  # Use print instead of logger
+        raise
+
 if __name__ == "__main__":
     # Test image capture
     try:
