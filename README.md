@@ -4,27 +4,17 @@
 The vespCV project aims to develop an automated detection system for the invasive Asian hornet (Vespa velutina). This system leverages computer vision technology to provide beekeepers and researchers with a reliable tool for monitoring and controlling hornet populations.
 
 ## Introduction
-In recent years, the invasive Asian hornet (Vespa velutina) has posed a significant threat to honeybee populations and, consequently, to our ecosystems and agriculture. The `vespCV` project aims to develop an innovative, automated detection system that empowers beekeepers, volunteers, and researchers to combat this growing challenge effectively.
+In recent years, the invasive Asian hornet (Vespa velutina) has posed a significant threat to honeybee populations and, consequently, to our ecosystems and agriculture. The `vespCV` project aims to develop an open source non-profit automated detection system that empowers beekeepers, volunteers, and researchers to combat this growing challenge effectively.
 
 ### Problem Statement
-The Asian hornet is not only a predator of honeybees but also disrupts the delicate balance of our ecosystems. Early detection is crucial for effective control, yet current methods are often manual, time-consuming, and prone to human error. This gap in monitoring creates a pressing need for a reliable, user-friendly solution.
+The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. Beekeepers and researchers need a reliable, easy-to-use way to spot these hornets early.
 
 ### Solution Overview
-The `vespCV` project leverages cutting-edge computer vision technology to create a robust detection system that operates on a Raspberry Pi 4. Utilizing the YOLOv11s model, our system processes real-time camera input to identify and log the presence of Asian hornets, providing immediate alerts and actionable insights.
-
-## Dependencies
-The following external libraries are required for the `vespCV` project:
-
-- `ultralytics==8.3.137`
-- `opencv-python==4.11.0.86`
-- `numpy==2.2.5`
-- `pandas==2.2.3`
-- `gpiozero==1.6.2`
-- `torch==2.7.0`  # Ensure this is the correct version for your Raspberry Pi
+`vespCV` uses a Raspberry Pi 4 and a camera to automatically spot Asian hornets. It takes pictures, checks them with a computer vision model (YOLOv11s), and alerts you if an Azian hornet is found.
 
 ## Installation Instructions
 1. Install Raspberry Pi OS Bookworm.
-2. Create a directory for the project:
+2. Create a directory in your home folder:
    ```bash
    mkdir vespcv
    cd vespcv
@@ -66,7 +56,7 @@ The following external libraries are required for the `vespCV` project:
    ```
 6. Email Configuration (Optional)
 
-To receive email notifications when an Asian hornet is detected, follow these steps:
+If you don’t want email alerts, or if the raspberry has no connection to wifi when detecting, you can skip this step. To receive email notifications when an Asian hornet is detected, follow these steps:
 
    - **Create a Gmail Account**: 
    - Create an account for your hornet detector. You can use an existing email or create a new one for safety and to avoid spam.
@@ -95,6 +85,8 @@ To receive email notifications when an Asian hornet is detected, follow these st
 - The email will be sent when a Vespa velutina (vvel) is detected.
 
 ## Usage Guide
+
+For the setup of the raspberry and camera module 3 check the official [documentation](https://www.raspberrypi.com/documentation/accessories/camera.html).
 
 ### Starting the Application
 1. Open a terminal window
@@ -129,7 +121,7 @@ The application window is divided into several sections:
 2. **Email Alerts**
    - Click the **MAIL** button to enable email notifications
    - When enabled, you'll receive an email when the first Asian hornet is detected (requires internet connection and email configuration)
-   - The button turns blue when email alerts are active
+   - The MAIL button turns blue when email alerts are active
 
 3. **Saving Detections**
    - When a hornet is detected, the image appears in the "Recent Detections" panel
@@ -148,25 +140,25 @@ The application window is divided into several sections:
 - Keep the camera lens clean and free from obstructions
 - Position the camera in a well-lit area for better detection
 
+## Using Your Raspberry Pi Remotely
+
+You can control and view your Raspberry Pi from another computer, tablet, or phone using **Raspberry Pi Connect**. This makes it easy to set up and monitor your hornet detector, even if you’re not near the device.
+
+- **Raspberry Pi Connect**:  
+  [Official Guide: How to use Raspberry Pi Connect](https://www.raspberrypi.com/documentation/computers/remote-access.html#raspberry-pi-connect)
+
+If you’ve never used a Raspberry Pi before, check out these beginner-friendly guides:
+
+- [Getting Started with Raspberry Pi](https://www.raspberrypi.com/documentation/computers/getting-started.html)
+- [How to Set Up Your Raspberry Pi](https://projects.raspberrypi.org/en/projects/raspberry-pi-setting-up)
+- [How to Connect a Camera to Raspberry Pi](https://www.raspberrypi.com/documentation/accessories/camera.html)
+
 ### Troubleshooting
 If you encounter any issues:
 1. Check that the camera is properly connected
 2. Ensure the system has a stable internet connection for email alerts
-3. Check the detection log for any error messages
+3. If you have problems, you can also check the log files in the data/logs/ folder for more details.
 
-## Directory Structure
-The project is organized into several main directories, each serving a specific purpose:
-
-- **`main.py`**: Entry point for the application, handling configuration loading and GUI initialization.
-- **`src/`**: Core application code, including:
-  - **`core/`**: Main detection logic and utilities.
-  - **`gui/`**: GUI components built using Tkinter.
-  - **`utils/`**: Helper functions for image processing and other utilities.
-- **`config/`**: Configuration files in YAML format.
-- **`models/`**: Stores trained model weights used for detection.
-- **`tests/`**: Contains unit and integration tests.
-- **`doc/`**: Documentation files, including the Product Requirements Document (PRD).
-- **`data/`**: Stores generated data, including images and logs.
 
 ## License
 This project is licensed under the GPL Version 3. See the [LICENSE](LICENSE) file for details.
