@@ -18,6 +18,10 @@ def log_detection_data(detections, image_path):
         image_path: Path to the detected image
     """
     try:
+        # Skip logging if no detection was made
+        if detections.get('class') == 'no_detection':
+            return
+            
         # Create logs directory if it doesn't exist
         logs_dir = os.path.join('data', 'logs')
         os.makedirs(logs_dir, exist_ok=True)
