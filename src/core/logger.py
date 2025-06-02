@@ -1,6 +1,8 @@
 import logging
 import time
 import threading
+import os
+import shutil
 
 # Configure logging (initial setup without handlers)
 logger = logging.getLogger(__name__)
@@ -35,21 +37,67 @@ def get_cpu_temperature():
         logger.error("Failed to read CPU temperature: %s", e)
         return None
 
-def log_temperature():
-    """Log the CPU temperature every 15 minutes."""
-    with open('data/logs/system_stats.log', 'a') as stats_file:  # Open the log file
+def get_disk_usage():
+    """Get disk usage information for the root filesystem."""
+    try:
+        total, used, free = shutil.disk_usage("/")
+        return {
+            'total_gb': total / (1024**3),  # Convert to GB
+            'used_gb': used / (1024**3),
+            'free_gb': free / (1024**3),
+            'used_percent': (used / total) * 100
+        }
+    except Exception as e:
+        logger.error("Failed to read disk usage: %s", e)
+        return None
+
+def log_system_stats():
+    """Log system statistics (temperature and disk usage) every 15 minutes."""
+    with open('data/logs/system_stats.log', 'a') as stats_file:
         while True:
+            # Get temperature
             temperature = get_cpu_temperature()
+            
+            # Get disk usage
+            disk_usage = get_disk_usage()
+            
+            # Prepare log entry
+            timestamp = time.time()
+            log_entry = f"{timestamp},"
+            
+            if temperature is not None:
+                log_entry += f"{temperature:.2f},"
+            else:
+                log_entry += "N/A,"
+                
+            if disk_usage is not None:
+                log_entry += f"{disk_usage['used_gb']:.2f},{disk_usage['free_gb']:.2f},{disk_usage['used_percent']:.1f}"
+            else:
+                log_entry += "N/A,N/A,N/A"
+                
+            # Write to log file
+            stats_file.write(log_entry + "\n")
+            stats_file.flush()  # Ensure immediate write to disk
+            
+            # Log to console for monitoring
             if temperature is not None:
                 logger.info("CPU Temperature: %.2f °C", temperature)
-                stats_file.write(f"{time.time()},{temperature:.2f}\n")  # Save timestamp and temperature
+            if disk_usage is not None:
+                logger.info("Disk Usage: %.2f GB used, %.2f GB free (%.1f%%)", 
+                          disk_usage['used_gb'], disk_usage['free_gb'], disk_usage['used_percent'])
+            
             time.sleep(900)  # Sleep for 15 minutes
 
 def start_temperature_logging():
-    """Start the temperature logging in a separate thread."""
-    temp_thread = threading.Thread(target=log_temperature)
-    temp_thread.daemon = True  # Daemonize thread
-    temp_thread.start()
+    """Start the system statistics logging in a separate thread."""
+    # Create header in log file if it doesn't exist
+    if not os.path.exists('data/logs/system_stats.log') or os.path.getsize('data/logs/system_stats.log') == 0:
+        with open('data/logs/system_stats.log', 'w') as stats_file:
+            stats_file.write("timestamp,temperature_c,disk_used_gb,disk_free_gb,disk_used_percent\n")
+    
+    stats_thread = threading.Thread(target=log_system_stats)
+    stats_thread.daemon = True  # Daemonize thread
+    stats_thread.start()
 
 def main():
     """Main function to start temperature logging."""
@@ -59,7 +107,7 @@ def main():
         while True:
             time.sleep(1)  # Keep the main thread alive
     except KeyboardInterrupt:
-        print("Temperature logging stopped.")
+        print("System statistics logging stopped.")
 
 if __name__ == "__main__":
     main()  # Call the main function
