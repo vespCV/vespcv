@@ -3,6 +3,15 @@
 ## Overview
 The vespCV project aims to develop an automated detection system for the invasive Asian hornet (Vespa velutina). This system leverages computer vision technology to provide beekeepers and researchers with a reliable tool for monitoring and controlling hornet populations.
 
+## Table of Contents
+- [Introduction](#introduction)
+- [Installation Instructions](#installation-instructions)
+- [Usage Guide](#usage-guide)
+- [Using Your Raspberry Pi Remotely](#using-your-raspberry-pi-remotely)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+- [Additional Resources](#additional-resources)
+
 ## Introduction
 In recent years, the invasive Asian hornet (Vespa velutina) has posed a significant threat to honeybee populations and, consequently, to our ecosystems and agriculture. The `vespCV` project aims to develop an open source non-profit automated detection system that empowers beekeepers, volunteers, and researchers to combat this growing challenge effectively.
 
@@ -10,7 +19,7 @@ In recent years, the invasive Asian hornet (Vespa velutina) has posed a signific
 The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. Beekeepers and researchers need a reliable, easy-to-use way to spot these hornets early.
 
 ### Solution Overview
-`vespCV` uses a Raspberry Pi 4 and a camera to automatically spot Asian hornets. It takes pictures, checks them with a computer vision model (YOLOv11s), and alerts you if an Azian hornet is found.
+`vespCV` uses a Raspberry Pi 4 and a camera to automatically spot Asian hornets. It takes pictures, checks them with a computer vision model (YOLOv11s), and alerts you if an Asian hornet is found.
 
 ## Installation Instructions
 1. Install Raspberry Pi OS Bookworm.
@@ -31,9 +40,8 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    pip install -r requirements.txt
    ```
 
-5. Create a start script:
+5. Create a launch script named start_vespcv.sh:
    ```bash
-   # Create a new file called start_vespcv
    nano start_vespcv
    ```
    
@@ -56,7 +64,7 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    ```
 6. Email Configuration (Optional)
 
-If you don’t want email alerts, or if the raspberry has no connection to wifi when detecting, you can skip this step. To receive email notifications when an Asian hornet is detected, follow these steps:
+If you don’t want email alerts, or if the Raspberry Pi has no connection to wifi when detecting, you can skip this step. To receive email notifications when an Asian hornet is detected, follow these steps:
 
    - **Create a Gmail Account**: 
    - Create an account for your hornet detector. You can use an existing email or create a new one for safety and to avoid spam.
@@ -81,12 +89,12 @@ If you don’t want email alerts, or if the raspberry has no connection to wifi 
    ```
 
 ### Important Notes:
-- Ensure that you store your email credentials securely. Using environment variables, as shown above, is a good practice.
-- The email will be sent when a Vespa velutina (vvel) is detected.
+- Ensure that you store your email credentials securely. Avoid pushing .bashrc or any files containing sensitive data to version control.
+- An email notification is sent automatically when the first Vespa velutina is detected..
 
 ## Usage Guide
 
-For the setup of the raspberry and camera module 3 check the official [documentation](https://www.raspberrypi.com/documentation/accessories/camera.html).
+For the setup of the Raspberry Pi and camera module 3 check the official [documentation](https://www.raspberrypi.com/documentation/accessories/camera.html).
 
 ### Starting the Application
 1. Open a terminal window
@@ -94,13 +102,13 @@ For the setup of the raspberry and camera module 3 check the official [documenta
 3. The application window will open automatically
 
 ### Understanding the Interface
-The application window is divided into several sections:
+The application interface consists of the following sections:
 
 1. **Top Bar**
-   - **START** (Green button): Starts the hornet detection
-   - **STOP** (Orange button): Pauses the detection
-   - **MAIL** (Gray/Blue button): Toggles email alerts for hornet detections
-   - **GPIO** (Gray button): Controls the LED indicator (mockup for hornet trap or electric harp)
+   - **`START`** (Green button): Starts the hornet detection
+   - **`STOP`** (Orange button): Pauses the detection
+   - **`MAIL`** (Gray/Blue button): Toggles email alerts for hornet detections
+   - **`GPIO`** (Gray button): Controls external hardware like a trap or deterrent device (e.g., electric harp – placeholder functionality).
    - **LED Indicator** (●): Shows the current status of the detection system
 
 2. **Main Screen**
