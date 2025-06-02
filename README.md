@@ -41,6 +41,30 @@ The following external libraries are required for the `vespCV` project:
    pip install -r requirements.txt
    ```
 
+5. Create a start script:
+   ```bash
+   # Create a new file called start_vespcv
+   nano start_vespcv
+   ```
+   
+   Copy and paste these lines into the file:
+   ```bash
+   #!/bin/bash
+   cd ~/vespcv
+   source venv/bin/activate
+   python main.py
+   ```
+   
+   Save the file by pressing:
+   - `Ctrl + X`
+   - Press `Y` to confirm
+   - Press `Enter` to save
+   
+   Make the script executable:
+   ```bash
+   chmod +x start_vespcv
+   ```
+
 ## Usage Guide
 To run the application, execute:
 ```bash
