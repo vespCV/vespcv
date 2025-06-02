@@ -40,17 +40,29 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    pip install -r requirements.txt
    ```
 
-5. Create a launch script named start_vespcv.sh:
+5. Create a launch script named start_vespcv:
    ```bash
-   nano start_vespcv
+   nano /home/vcv/start_vespcv
    ```
    
    Copy and paste these lines into the file:
    ```bash
    #!/bin/bash
-   cd ~/vespcv
+
+   # Change to the vespCV directory
+   cd /home/vcv/vespcv
+
+   # Activate the virtual environment
    source venv/bin/activate
-   python main.py
+
+   # Set display for GUI
+   export DISPLAY=:0
+
+   # Add the project root to PYTHONPATH
+   export PYTHONPATH=/home/vcv/vespcv:$PYTHONPATH
+
+   # Start the application using the virtual environment's Python
+   /home/vcv/vespcv/venv/bin/python src/core/main.py
    ```
    
    Save the file by pressing:
@@ -60,11 +72,25 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    
    Make the script executable:
    ```bash
-   chmod +x start_vespcv
+   chmod +x /home/vcv/start_vespcv
    ```
-6. Email Configuration (Optional)
 
-If you don’t want email alerts, or if the Raspberry Pi has no connection to wifi when detecting, you can skip this step. To receive email notifications when an Asian hornet is detected, follow these steps:
+6. Set up autostart with GUI:
+   ```bash
+   # Open the crontab editor
+   crontab -e
+   ```
+   
+   Add this line to start the application at boot:
+   ```bash
+   @reboot sleep 30 && /home/vcv/start_vespcv >> /home/vcv/vespcv/data/logs/startup.log 2>&1
+   ```
+   
+   The `sleep 30` ensures the system is fully booted before starting the application.
+
+7. Email Configuration (Optional)
+
+If you don't want email alerts, or if the Raspberry Pi has no connection to wifi when detecting, you can skip this step. To receive email notifications when an Asian hornet is detected, follow these steps:
 
    - **Create a Gmail Account**: 
    - Create an account for your hornet detector. You can use an existing email or create a new one for safety and to avoid spam.
@@ -90,7 +116,7 @@ If you don’t want email alerts, or if the Raspberry Pi has no connection to wi
 
 ### Important Notes:
 - Ensure that you store your email credentials securely. Avoid pushing .bashrc or any files containing sensitive data to version control.
-- An email notification is sent automatically when the first Vespa velutina is detected..
+- An email notification is sent automatically when the first Vespa velutina is detected.
 
 ## Usage Guide
 
@@ -148,14 +174,15 @@ The application interface consists of the following sections:
 - Keep the camera lens clean and free from obstructions
 - Position the camera in a well-lit area for better detection
 
+
 ## Using Your Raspberry Pi Remotely
 
-You can control and view your Raspberry Pi from another computer, tablet, or phone using **Raspberry Pi Connect**. This makes it easy to set up and monitor your hornet detector, even if you’re not near the device.
+You can control and view your Raspberry Pi from another computer, tablet, or phone using **Raspberry Pi Connect**. This makes it easy to set up and monitor your hornet detector, even if you're not near the device.
 
 - **Raspberry Pi Connect**:  
   [Official Guide: How to use Raspberry Pi Connect](https://www.raspberrypi.com/documentation/computers/remote-access.html#raspberry-pi-connect)
 
-If you’ve never used a Raspberry Pi before, check out these beginner-friendly guides:
+If you've never used a Raspberry Pi before, check out these beginner-friendly guides:
 
 - [Getting Started with Raspberry Pi](https://www.raspberrypi.com/documentation/computers/getting-started.html)
 - [How to Set Up Your Raspberry Pi](https://projects.raspberrypi.org/en/projects/raspberry-pi-setting-up)
