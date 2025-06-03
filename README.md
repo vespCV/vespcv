@@ -192,6 +192,19 @@ The application interface consists of the following sections:
 
 ![Detections](doc/Detections.png)
 
+## Using Your Raspberry Pi Remotely
+
+You can control and view your Raspberry Pi from another computer, tablet, or phone using **Raspberry Pi Connect**. This makes it easy to set up and monitor your hornet detector, even if you're not near the device. However, this feature only works if the Raspberry Pi has access to a Wi-Fi network.
+
+- **Raspberry Pi Connect**:  
+  [Official Guide: How to use Raspberry Pi Connect](https://www.raspberrypi.com/documentation/computers/remote-access.html#raspberry-pi-connect)
+
+If you've never used a Raspberry Pi before, check out these beginner-friendly guides:
+
+- [Getting Started with Raspberry Pi](https://www.raspberrypi.com/documentation/computers/getting-started.html)
+- [How to Set Up Your Raspberry Pi](https://projects.raspberrypi.org/en/projects/raspberry-pi-setting-up)
+- [How to Connect a Camera to Raspberry Pi](https://www.raspberrypi.com/documentation/accessories/camera.html)
+
 ## Advanced Configuration
 
 The system can be customized through the `config.yaml` file. Here are the main settings you can adjust:
@@ -228,19 +241,6 @@ The system can be customized through the `config.yaml` file. Here are the main s
 - **LED Duration** (default: 3 seconds)
   - How long the LED stays on after a detection
   - Adjust based on your visibility needs
-
-## Using Your Raspberry Pi Remotely
-
-You can control and view your Raspberry Pi from another computer, tablet, or phone using **Raspberry Pi Connect**. This makes it easy to set up and monitor your hornet detector, even if you're not near the device.
-
-- **Raspberry Pi Connect**:  
-  [Official Guide: How to use Raspberry Pi Connect](https://www.raspberrypi.com/documentation/computers/remote-access.html#raspberry-pi-connect)
-
-If you've never used a Raspberry Pi before, check out these beginner-friendly guides:
-
-- [Getting Started with Raspberry Pi](https://www.raspberrypi.com/documentation/computers/getting-started.html)
-- [How to Set Up Your Raspberry Pi](https://projects.raspberrypi.org/en/projects/raspberry-pi-setting-up)
-- [How to Connect a Camera to Raspberry Pi](https://www.raspberrypi.com/documentation/accessories/camera.html)
 
 ### Troubleshooting
 
