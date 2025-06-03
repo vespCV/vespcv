@@ -16,7 +16,7 @@ The vespCV project aims to develop an automated detection system for the invasiv
 In recent years, the invasive Asian hornet (Vespa velutina) has posed a significant threat to honeybee populations and, consequently, to our ecosystems and agriculture. The `vespCV` project aims to develop an open-source non-profit automated detection system that empowers beekeepers, volunteers, and researchers to combat this growing challenge effectively.
 
 ### Problem Statement
-The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. Beekeepers and researchers need a reliable, easy-to-use way to spot these hornets early.
+The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. Beekeepers, Asian hornet controlers, and researchers need a reliable, easy-to-use way to spot these hornets early.
 
 ### Solution Overview
 `vespCV` uses a Raspberry Pi 4 and a camera to automatically spot Asian hornets. It takes pictures, checks them with a computer vision model (YOLOv11s), and alerts you if an Asian hornet is found.
@@ -25,7 +25,7 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
 
 ### Hardware Requirements
 - **Raspberry Pi 4B** (4GB or 8GB versions) or **Raspberry Pi 5** (8GB)
-- **Power Supply**: Ensure you have a suitable power supply for the Raspberry Pi.
+- **Power Supply**: Ensure you have a suitable power supply for the Raspberry Pi. For edge detection in the field you can use a Raspberry Pi 4 with a 5V 3A powerbank. (The Raspberry Pi5 needs 5V 5A.)
 - **Micro SD Card**: A 32GB card was used for this project.
 - **Micro SD Card Reader**: Needed to flash the OS onto the micro SD card.
 - **Camera**: 
