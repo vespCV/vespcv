@@ -13,7 +13,7 @@ The vespCV project aims to develop an automated detection system for the invasiv
 - [Additional Resources](#additional-resources)
 
 ## Introduction
-In recent years, the invasive Asian hornet (Vespa velutina) has posed a significant threat to honeybee populations and, consequently, to our ecosystems and agriculture. The `vespCV` project aims to develop an open source non-profit automated detection system that empowers beekeepers, volunteers, and researchers to combat this growing challenge effectively.
+In recent years, the invasive Asian hornet (Vespa velutina) has posed a significant threat to honeybee populations and, consequently, to our ecosystems and agriculture. The `vespCV` project aims to develop an open-source non-profit automated detection system that empowers beekeepers, volunteers, and researchers to combat this growing challenge effectively.
 
 ### Problem Statement
 The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. Beekeepers and researchers need a reliable, easy-to-use way to spot these hornets early.
@@ -22,17 +22,42 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
 `vespCV` uses a Raspberry Pi 4 and a camera to automatically spot Asian hornets. It takes pictures, checks them with a computer vision model (YOLOv11s), and alerts you if an Asian hornet is found.
 
 ## Installation Instructions
+
+### Hardware Requirements
+- **Raspberry Pi 4B** (4GB or 8GB versions) or **Raspberry Pi 5** (8GB)
+- **Power Supply**: Ensure you have a suitable power supply for the Raspberry Pi.
+- **Micro SD Card**: A 32GB card was used for this project.
+- **Micro SD Card Reader**: Needed to flash the OS onto the micro SD card.
+- **Camera**: 
+  - **Raspberry Camera Module 3** or 
+  - **Arducam IMX519 16MP Autofocus Camera Module** (a lower quality or USB camera will also work).
+- **Camera Mount and Protector** (optional): To secure the camera in place.
+- **Bait Lure**: To attract hornets.
+
+### Installing Raspberry Pi OS
 1. Install Raspberry Pi OS Bookworm.
+   - Use Raspberry Pi Imager to install Bookworm (64-bit) on your SD card:
+     - **Raspberry Pi Model**: Raspberry Pi 4
+     - **Operating System**: Raspberry Pi OS (64-bit)
+     - **Edit settings to preconfigure**:
+       - **hostname**: pi
+       - **username**: vcv
+       - **password**: `choose-a-save-password`
+       - Configure other options according to your Wi-Fi and time zone settings.
+   - Detailed information can be found [here](https://www.raspberrypi.com/documentation/computers/getting-started.html).
+
 2. Create a directory in your home folder:
    ```bash
    mkdir vespcv
    cd vespcv
    ```
+
 3. Clone the repository:
    ```bash
    git clone https://github.com/vespCV/vespcv.git
    cd vespcv
    ```
+
 4. Set up the virtual environment and install dependencies:
    ```bash
    python3 -m venv venv
@@ -40,11 +65,10 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    pip install -r requirements.txt
    ```
 
-5. Create a launch script named start_vespcv:
+5. Create a launch script named `start_vespcv`:
    ```bash
    nano /home/vcv/start_vespcv
    ```
-   
    Copy and paste these lines into the file:
    ```bash
    #!/bin/bash
@@ -64,12 +88,11 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    # Start the application using the virtual environment's Python
    /home/vcv/vespcv/venv/bin/python src/core/main.py
    ```
-   
    Save the file by pressing:
    - `Ctrl + X`
    - Press `Y` to confirm
    - Press `Enter` to save
-   
+
    Make the script executable:
    ```bash
    chmod +x /home/vcv/start_vespcv
@@ -80,42 +103,29 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    # Open the crontab editor
    crontab -e
    ```
-   
    Add this line to start the application at boot:
    ```bash
    @reboot sleep 30 && /home/vcv/start_vespcv >> /home/vcv/vespcv/data/logs/startup.log 2>&1
    ```
-   
    The `sleep 30` ensures the system is fully booted before starting the application.
 
-7. Email Configuration (Optional)
-
-If you don't want email alerts, or if the Raspberry Pi has no connection to wifi when detecting, you can skip this step. To receive email notifications when an Asian hornet is detected, follow these steps:
-
-   - **Create a Gmail Account**: 
-   - Create an account for your hornet detector. You can use an existing email or create a new one for safety and to avoid spam.
-
-   - **Enable Two-Factor Authentication (2FA)**: 
-   - Activate 2FA for your Gmail account to enhance security.
-
-   - **Generate an App Password**: 
-   - Create an [app password](https://support.google.com/mail/answer/185833?hl=en#:~:text=in%20or%20out-,Sign%20in%20with%20app%20passwords,-Sign%20in%20with) for your account. This password will be used instead of your regular email password.
-
-   - **Configure Email Credentials**: 
-   - Add your email address and app password to your `.bashrc` file:
-   ```bash
-   export EMAIL_USER="your_email@gmail.com"
-   export EMAIL_PASS="your_app_password"
-   ```
-
-   - **Apply Changes**: 
-   - Run the following command to apply the changes:
-   ```bash
-   source ~/.bashrc
-   ```
+7. **Email Configuration (Optional)**:
+   If you don't want email alerts, or if the Raspberry Pi has no connection to Wi-Fi when detecting, you can skip this step. To receive email notifications when an Asian hornet is detected, follow these steps:
+   - **Create a Gmail Account**: Create an account for your hornet detector. You can use an existing email or create a new one for safety and to avoid spam.
+   - **Enable Two-Factor Authentication (2FA)**: Activate 2FA for your Gmail account to enhance security.
+   - **Generate an App Password**: Create an [app password](https://support.google.com/mail/answer/185833?hl=en#:~:text=in%20or%20out-,Sign%20in%20with%20app%20passwords,-Sign%20in%20with) for your account. This password will be used instead of your regular email password.
+   - **Configure Email Credentials**: Add your email address and app password to your `.bashrc` file:
+     ```bash
+     export EMAIL_USER="your_email@gmail.com"
+     export EMAIL_PASS="your_app_password"
+     ```
+   - **Apply Changes**: Run the following command to apply the changes:
+     ```bash
+     source ~/.bashrc
+     ```
 
 ### Important Notes:
-- Ensure that you store your email credentials securely. Avoid pushing .bashrc or any files containing sensitive data to version control.
+- Ensure that you store your email credentials securely. Avoid pushing `.bashrc` or any files containing sensitive data to version control.
 - An email notification is sent automatically when the first Vespa velutina is detected.
 
 ## Usage Guide
@@ -189,10 +199,46 @@ If you've never used a Raspberry Pi before, check out these beginner-friendly gu
 - [How to Connect a Camera to Raspberry Pi](https://www.raspberrypi.com/documentation/accessories/camera.html)
 
 ### Troubleshooting
-If you encounter any issues:
-1. Check that the camera is properly connected
-2. Ensure the system has a stable internet connection for email alerts
-3. If you have problems, you can also check the log files in the data/logs/ folder for more details.
+
+If you encounter any issues, follow these steps:
+
+1. **General Checks**:
+   - Check that the camera is properly connected.
+   - Ensure the system has a stable internet connection for email alerts.
+   - If you have problems, check the log files in the `data/logs/` folder for more details.
+
+### Camera Issues
+- **Camera not detected**: 
+  - Ensure the camera is properly connected.
+  - Run `sudo raspi-config` and enable the camera interface.
+  - Reboot the Raspberry Pi.
+
+- **Camera permission errors**:
+  - Add your user to the video group:
+    ```bash
+    sudo usermod -a -G video $USER
+    ```
+  - Log out and log back in for changes to take effect.
+
+### Model Detection Issues
+- **Low detection accuracy**:
+  - Check if the camera is properly focused.
+  - Ensure adequate lighting.
+  - Adjust confidence thresholds in the code if needed.
+
+- **Model loading errors**:
+  - Verify the model file (`best.pt`) is in the correct directory.
+  - Check if the model file is not corrupted.
+  - Ensure sufficient RAM is available (at least 4GB recommended).
+
+### Network Issues
+- **SSH connection problems**:
+  - Verify the Raspberry Pi is on the same network.
+  - Check if SSH is enabled:
+    ```bash
+    sudo systemctl status ssh
+    ```
+  - Verify the IP address hasn't changed.
 
 
 ## License
@@ -204,7 +250,7 @@ This project is licensed under the GPL Version 3. See the [LICENSE](LICENSE) fil
 - [OpenCV Documentation](https://docs.opencv.org/): Documentation for OpenCV, the library used for image processing.
 - [Python Documentation](https://docs.python.org/3/): Official Python documentation for reference on Python programming.
 - [waarnemingen.nl](https://waarneming.nl/): An official platform for reporting sightings of Asian hornets, allowing users to submit images and additional information to aid in monitoring and controlling hornet populations. 
-
+For Arducam, refer to the manual [here](https://docs.arducam.com/Raspberry-Pi-Camera/Pivariety-Camera/Quick-Start-Guide/). For the Raspberry Camera Module 3 please find the documentation [here](https://www.raspberrypi.com/documentation/accessories/camera.html).
 
 
 
