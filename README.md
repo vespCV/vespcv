@@ -293,8 +293,9 @@ This project is licensed under the GPL Version 3. See the [LICENSE](LICENSE) fil
 - [YOLOv11 Documentation](https://docs.ultralytics.com/): Documentation for the YOLOv11 model.
 - [OpenCV Documentation](https://docs.opencv.org/): Documentation for OpenCV, the library used for image processing.
 - [Python Documentation](https://docs.python.org/3/): Official Python documentation for reference on Python programming.
-- [waarnemingen.nl](https://waarneming.nl/): An official platform for reporting sightings of Asian hornets, allowing users to submit images and additional information to aid in monitoring and controlling hornet populations. 
-For Arducam, refer to the manual [here](https://docs.arducam.com/Raspberry-Pi-Camera/Pivariety-Camera/Quick-Start-Guide/). For the Raspberry Camera Module 3 please find the documentation [here](https://www.raspberrypi.com/documentation/accessories/camera.html).
+- [waarnemingen.nl](https://waarneming.nl/): An official platform for reporting sightings of Asian hornets, allowing users to submit images and additional information to aid in monitoring and controlling hornet populations.
+- [Arducam documentation](https://docs.arducam.com/Raspberry-Pi-Camera/Pivariety-Camera/Quick-Start-Guide/)
+- [Raspberry Camera Module 3 documentation](https://www.raspberrypi.com/documentation/accessories/camera.html).
 
 
 
