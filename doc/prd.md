@@ -53,7 +53,7 @@ Camera input → AI detection → storage + logging
 
 3. As a researcher, I want access to logged detection data and images to analyze the behavior patterns of Asian hornets.
 
-## 4. Functional Requirements
+## 4. Functional Requirements (FR)
 
 ### 4.1 Detection
 | ID | Requirement | Description |
@@ -94,7 +94,7 @@ Camera input → AI detection → storage + logging
 |----|-------------|-------------|
 | FR15 | Error Logging | The application must log error messages (e.g., failed camera access or full storage medium) and make them visible (in GUI or CLI). |
 
-## 5. Non-Functional Requirements
+## 5. Non-Functional Requirements (NFR)
 
 ### 5.1 Performance
 | ID | Requirement | Description |
@@ -136,7 +136,7 @@ Camera input → AI detection → storage + logging
 - Python
 
 ### 6.4 Libraries
-- `ultralytics` for YOLO model implementation (version 8.3.137)
+- `ultralytics` for YOLO (You Only Look Once) model implementation (version 8.3.137)
 - `opencv-python` for image processing (version 4.11.0.86)
 - `numpy` for numerical operations (version 2.2.5)
 - `pandas` for data manipulation and analysis (version 2.2.3)
