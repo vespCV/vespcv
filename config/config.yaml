@@ -21,6 +21,10 @@ class_names: ['amel', 'vcra', 'vespsp', 'vvel', 'vzon']
 # libcamera-still -t 0 --autofocus-mode continuous --info-text "%lp"
 lensposition: 1
 
+# Autofocus settings
+autofocus: true  # Enable or disable autofocus
+autofocus_mode: "continuous"  # Options: "continuous", "single", etc.
+
 # Interval in seconds between captures
 capture_interval: 15
 
