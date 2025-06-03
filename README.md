@@ -184,6 +184,42 @@ The application interface consists of the following sections:
 - Keep the camera lens clean and free from obstructions
 - Position the camera in a well-lit area for better detection
 
+## Advanced Configuration
+
+The system can be customized through the `config.yaml` file. Here are the main settings you can adjust:
+
+### Detection Settings
+- **Confidence Threshold** (default: 0.70)
+  - Higher values (closer to 1.0) mean more certain detections
+  - Lower values might catch more hornets but could include false positives
+  - Recommended range: 0.60 - 0.80
+
+### Camera Settings
+- **Lens Position** (default: 1)
+  - 0: Far distance (approximately 3 meters)
+  - 1: Medium distance (approximately 1 meter)
+  - 10: Close-up (approximately 10 centimeters)
+  - To test lens position: `libcamera-still -t 0 --autofocus-mode continuous --info-text "%lp"`
+
+### Timing Settings
+- **Capture Interval** (default: 15 seconds)
+  - How often the camera takes a new picture
+  - Lower values mean more frequent checks but higher resource usage
+  - Recommended range: 10-30 seconds
+
+- **Chart Interval** (default: 15 minutes)
+  - How detections are grouped in the activity chart
+  - Affects how the detection history is displayed
+  - Recommended range: 10-30 minutes
+
+### LED Settings
+- **LED Pin** (default: 21)
+  - GPIO pin number for the status LED
+  - Only change if you've connected the LED to a different pin
+
+- **LED Duration** (default: 3 seconds)
+  - How long the LED stays on after a detection
+  - Adjust based on your visibility needs
 
 ## Using Your Raspberry Pi Remotely
 
