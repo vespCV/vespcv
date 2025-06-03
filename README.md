@@ -183,7 +183,7 @@ The application interface consists of the following sections:
    - Click the green **START** button to resume detection after stopping
 
 6. **Test the system**
-   - For testing purposes, you can use the [insect slider](test/InsectSlider.m4v) to simulate different insect detections. This tool allows you to evaluate the system's response to various scenarios and ensure accurate hornet detection.
+   - For testing purposes, you can use the [insect slider](test/InsectSlider.m4v) to simulate different insect detections. Play the video on your computer monitor or smartphone in front of the camera as a mockup for real insects. This setup allows you to evaluate the system's response to various scenarios and ensures accurate hornet detection.
 
 ### Tips for Best Results
 - Ensure the camera has a clear view of the area you want to monitor
