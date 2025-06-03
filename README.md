@@ -294,8 +294,8 @@ This project is licensed under the GPL Version 3. See the [LICENSE](LICENSE) fil
 - [OpenCV Documentation](https://docs.opencv.org/): Documentation for OpenCV, the library used for image processing.
 - [Python Documentation](https://docs.python.org/3/): Official Python documentation for reference on Python programming.
 - [waarnemingen.nl](https://waarneming.nl/): An official platform for reporting sightings of Asian hornets, allowing users to submit images and additional information to aid in monitoring and controlling hornet populations.
-- [Arducam documentation](https://docs.arducam.com/Raspberry-Pi-Camera/Pivariety-Camera/Quick-Start-Guide/)
-- [Raspberry Camera Module 3 documentation](https://www.raspberrypi.com/documentation/accessories/camera.html).
+- [Arducam documentation](https://docs.arducam.com/Raspberry-Pi-Camera/Pivariety-Camera/Quick-Start-Guide/): This guide provides detailed instructions on setting up and using the Arducam camera with the Raspberry Pi, including installation steps, configuration options, and troubleshooting tips.
+- [Raspberry Camera Module 3 documentation](https://www.raspberrypi.com/documentation/accessories/camera.html): This official documentation covers the features, setup, and usage of the Raspberry Camera Module 3.
 
 
 
