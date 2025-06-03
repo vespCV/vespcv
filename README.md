@@ -24,20 +24,20 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
 ## Installation Instructions
 
 ### Hardware Requirements
-- **Raspberry Pi 4B** (4GB or 8GB versions) or **Raspberry Pi 5** (8GB)
+- [**Raspberry Pi4 B**](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/?variant=raspberry-pi-4-model-b-8gb) (An 8GB and 4GB versions were used for this project) or a [**Raspberry Pi5**](https://www.raspberrypi.com/products/raspberry-pi-5/) (8GB)
 - **Power Supply**: Ensure you have a suitable power supply for the Raspberry Pi. For edge detection in the field you can use a Raspberry Pi 4 with a 5V 3A powerbank. (The Raspberry Pi5 needs 5V 5A.)
 - **Micro SD Card**: A 32GB card was used for this project.
 - **Micro SD Card Reader**: Needed to flash the OS onto the micro SD card.
 - **Camera**: 
   - **Raspberry Camera Module 3** or 
-  - **Arducam IMX519 16MP Autofocus Camera Module** (a lower quality or USB camera will also work).
+  - **Arducam IMX519 16MP Autofocus Camera Module** (a Camera module 2 will probably also work).
 - **Camera Mount and Protector** (optional): To secure the camera in place.
-- **Bait Lure**: To attract hornets.
+- [**Bait lure**](https://www.rbka.org.uk/index.php/asian-hornet/traps-and-lures) : To attract hornets.
 
 ### Installing Raspberry Pi OS
 1. Install Raspberry Pi OS Bookworm.
-   - Use Raspberry Pi Imager to install Bookworm (64-bit) on your SD card:
-     - **Raspberry Pi Model**: Raspberry Pi 4
+   - Use Raspberry Pi Imager to install Bookworm (64-bit) on your SD card. Select:
+     - **Raspberry Pi Model**: Raspberry Pi 4 or Raspberry Pi 5
      - **Operating System**: Raspberry Pi OS (64-bit)
      - **Edit settings to preconfigure**:
        - **hostname**: pi
@@ -146,8 +146,8 @@ The application interface consists of the following sections:
 1. **Top Bar**
    - **`START`** (Green button): Starts the hornet detection
    - **`STOP`** (Orange button): Pauses the detection
-   - **`MAIL`** (Gray/Blue button): Toggles email alerts for hornet detections
-   - **`GPIO`** (Gray button): Controls external hardware like a trap or deterrent device (e.g., electric harp – placeholder functionality).
+   - **`MAIL`** (Gray/Blue button): Toggles email alert for Asian hornet detection
+   - **`GPIO`** (Gray/Red button): Controls external hardware like a trap or deterrent device (e.g., electric harp – placeholder functionality).
    - **LED Indicator** (●): Shows the current status of the detection system
 
 2. **Main Screen**
@@ -166,7 +166,7 @@ The application interface consists of the following sections:
    - The system will automatically scan for hornets
 
 2. **Email Alerts**
-   - Click the **MAIL** button to enable email notifications
+   - Click the **MAIL** button to enable email notifications. When activated, you will receive an email with both the unannotated and annotated images upon the first detection of an Asian hornet.
    - When enabled, you'll receive an email when the first Asian hornet is detected (requires internet connection and email configuration)
    - The MAIL button turns blue when email alerts are active
 
