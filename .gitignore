@@ -21,8 +21,8 @@ venv/
 legacy/
 
 # Cursor docs
-# .cursor/
+.cursor/
 .cursorignore
-# PLANNING.md
-# TASK.md
+PLANNING.md
+TASK.md
 
