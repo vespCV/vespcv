@@ -18,6 +18,7 @@ Thumbs.db
 # Ignore folders
 data/
 venv/
+docs/developer
 
 # Cursor docs
 .cursor/rules/
