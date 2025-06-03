@@ -38,18 +38,18 @@ Camera input → AI detection → storage + logging
 - To develop and implement a robust and reliable computer vision system for the real-time detection of Vespa velutina.
 
 ### 2.2 Sub-objectives
-- User-friendly system for beekeepers, voluntiers, citizens.
+- User-friendly system for beekeepers, Asian hornet controlers, citizens.
 - Retrain with captured images to minimize false positives en improve detection accuracy under various environmental conditions.
 - Provide a log file, trigger for action of a electronic harp, sending an email upon detection.
 - Design a scalable system that can be applied in various contexts.
-- Sending training data to makers
+- Collect training data to assist system developers.
 
 
 ## 3. User Stories
 
 1. As a beekeeper, I want to place vespCV at my apiary so that I am warned early of the presence of Asian hornets, and automatically activates a electric harp to protect the bees.
 
-2. As a volunteer monitoring invasive species, I want to receive a almost realtime mail with the captured image to send it to 'waarnemingen.nl'.
+2. As a volunteer monitoring invasive species, I want to receive a almost realtime email with the captured image to send it to 'waarnemingen.nl'.
 
 3. As a researcher, I want access to logged detection data and images to analyze the behavior patterns of Asian hornets.
 
@@ -74,7 +74,7 @@ Camera input → AI detection → storage + logging
 | ID | Requirement | Description |
 |----|-------------|-------------|
 | FR08 | Config Loading | The application must load configuration settings from files in the config/ directory. |
-| FR09 | Configurable Parameters | The following parameters must be configurable: - Detection threshold value (confidence score), - E-mail adres, - Download location, - GPIO activation
+| FR09 | Configurable Parameters | The following parameters must be configurable: - detection threshold value (confidence score), - email adres, - download location, - GPIO activation
 
 ### 4.4 User Interface
 | ID | Requirement | Description |
@@ -99,7 +99,7 @@ Camera input → AI detection → storage + logging
 ### 5.1 Performance
 | ID | Requirement | Description |
 |----|-------------|-------------|
-| NFR01 | Real-time Detection | Detection must occur in near real-time (minimal delay between the event and detection). |
+| NFR01 | Real-time Detection | Detection must occur in near real-time (1 min delay between the event and detection is acceptable). |
 | NFR02 | Resource Usage | The application must not excessively burden the Raspberry Pi 4 system resources (<70% CPU over a 5-minute average). |
 
 ### 5.2 Reliability
@@ -127,7 +127,7 @@ Camera input → AI detection → storage + logging
 ## 6. Technical Requirements
 
 ### 6.1 Platform
-- Raspberry Pi 4 (4GB)
+- Raspberry Pi 4 or Raspberry Pi 5 with at least 4GB of RAM
 
 ### 6.2 Operating System
 - Raspberry Pi OS (bookworm)
@@ -136,9 +136,12 @@ Camera input → AI detection → storage + logging
 - Python
 
 ### 6.4 Libraries
-- Requirements as specified in requirements.txt
-- OpenCV
-- PyTorch (or another library for loading and executing the YOLO model)
+- `ultralytics` for YOLO model implementation (version 8.3.137)
+- `opencv-python` for image processing (version 4.11.0.86)
+- `numpy` for numerical operations (version 2.2.5)
+- `pandas` for data manipulation and analysis (version 2.2.3)
+- `gpiozero` for GPIO control (version 1.6.2)
+- `torch` for deep learning framework (version 2.7.0)
 - GUI libraries (such as Tkinter or PyQt if FR10-FR13 are implemented)
 
 ### 6.5 Hardware
@@ -148,7 +151,8 @@ Camera input → AI detection → storage + logging
 - YOLOv11s (model weights optimized and ready in the models/ directory)
 
 ### 6.7 Development Environment
-- Development via SSH using Cursor/VSCode
+- Development via SSH using Cursor/VSCode.
+- Raspberry Pi Connect for system testing.
 
 ## 7. Release Criteria
 
@@ -160,13 +164,13 @@ Camera input → AI detection → storage + logging
 ## 8. Future Improvements (Backlog)
 
 1. Integration with GPS modules for geotagging detections
-2. Sending training to the makers
+2. Sending JPG and TXT files to developers for monitoring and retraining purposes
 3. Implementation of more advanced analysis of detection patterns (combination with sound)
 
 ## 9. Log Formats and Details
 
 ### 9.1 Format
-- .csv (Comma Separated Values)
+- .log or .csv
 
 ### 9.2 Content per Detection
 - Species name
@@ -176,6 +180,11 @@ Camera input → AI detection → storage + logging
 - Filename of the saved image
 
 ### 9.3 Extra Log Information
+- **Timestamp**: The date and time when the log entry was created, formatted as `YYYY-MM-DD HH:MM:SS,SSS` (where `SSS` represents milliseconds).
+- **Log Level**: Indicates the severity or type of the log message (e.g., `INFO`, `ERROR`).
+- **Message**: A descriptive message providing information about the application's state or actions taken.
+
+### 9.4 Extra Log Information
 - **Temperature**: The ambient temperature, ideally measured by a sensor connected to the Raspberry Pi, at half-hourly intervals
 - **Camera Status**: Any error messages or status updates from the camera (e.g., if the camera is not working correctly or has timed out)
 - **Available Memory**: Regularly logging the available RAM memory on the Raspberry Pi can help in debugging performance issues
