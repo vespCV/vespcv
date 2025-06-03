@@ -21,8 +21,13 @@ venv/
 legacy/
 
 # Cursor docs
-.cursor/
+.cursor/rules/
 .cursorignore
 PLANNING.md
 TASK.md
+.cursor/rules/documentation-rules.mdc
+.cursor/rules/general-project-rules.mdc
+.cursor/rules/project-structure-documentation.mdc
+.cursor/rules/system-rules.mdc
+.cursor/rules/tech-stack.mdc
 
