@@ -187,6 +187,8 @@ The application interface consists of the following sections:
 - Keep the camera lens clean and free from obstructions
 - Position the camera in a well-lit area for better detection
 
+![Detections](doc/Detections.png)
+
 ## Advanced Configuration
 
 The system can be customized through the `config.yaml` file. Here are the main settings you can adjust:
