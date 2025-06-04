@@ -196,7 +196,7 @@ class vespcvGUI(tk.Tk):
         interval_minutes = self.config.get('chart_interval', 1)
         self.charts_frame = ttk.LabelFrame(
             parent_frame,
-            text=f'Detecties per {interval_minutes} Minute{"s" if interval_minutes > 1 else ""}'
+            text=f'Detecties per {interval_minutes} minute{"n" if interval_minutes > 1 else ""}'
         )
         self.charts_frame.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH, padx=5, pady=5)
         self.redraw_combined_chart()
@@ -205,7 +205,7 @@ class vespcvGUI(tk.Tk):
         # This method will contain Saved Detections and Logs
 
         # Saved Detections section (takes up the top part of the right panel)
-        self.saved_detections_frame = ttk.LabelFrame(parent_frame, text="Opgeslagen detectie van Aziatische Hoornaar, click om te downloaden naar desktop.")
+        self.saved_detections_frame = ttk.LabelFrame(parent_frame, text="Gedetecteerde Aziatische Hoornaars (Klik voor download naar desktop.)")
         self.saved_detections_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
         self.create_saved_detections_section(self.saved_detections_frame)
 
@@ -624,7 +624,7 @@ class vespcvGUI(tk.Tk):
                         ax.text(i, total, f'{total}',
                                 ha='center', va='bottom')
                 
-                ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
+                # ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
                 ax.set_ylabel('Number of Detections')
                 # ax.set_title(f'Detections per {interval_minutes} Minute{plural}')  # <-- Remove or comment out this line
                 ax.legend(loc='upper right')
@@ -650,7 +650,7 @@ class vespcvGUI(tk.Tk):
                 bars_vvel = ax.bar(full_intervals, vvel_counts, color='#FF0000', alpha=0.7, label='Vespa velutina')
                 bars_other = ax.bar(full_intervals, other_counts, bottom=vvel_counts, color='#808080', alpha=0.7, label='Other species')
 
-                ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
+                # ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
                 ax.set_ylabel('Number of Detections')
                 # ax.set_title(f'Detections per {interval_minutes} Minute{plural}')
                 ax.legend(loc='upper right')
