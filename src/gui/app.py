@@ -699,7 +699,7 @@ class vespcvGUI(tk.Tk):
         """Start a periodic timer to check and turn off the LED."""
         self.led_controller.check_and_turn_off()
         self._update_led_status()
-        self.after(500, self._start_led_timer)
+        self._led_timer_id = self.after(500, self._start_led_timer)
 
     def on_mail_button_click(self):
         """Handle the MAIL button click event."""
@@ -744,7 +744,20 @@ class vespcvGUI(tk.Tk):
             if hasattr(self, '_after_id') and self._after_id is not None:
                 self.after_cancel(self._after_id)
                 self._after_id = None
+                self.logger.info("Cancelled _after_id callback")
             
+            # Cancel LED timer if it's running
+            if hasattr(self, '_led_timer_id') and self._led_timer_id is not None:
+                self.after_cancel(self._led_timer_id)
+                self._led_timer_id = None
+                self.logger.info("Cancelled _led_timer_id callback")
+
+            # Cancel LED status update if it's running
+            if hasattr(self, '_update_status_id') and self._update_status_id is not None:
+                self.after_cancel(self._update_status_id)
+                self._update_status_id = None
+                self.logger.info("Cancelled _update_status_id callback")
+
             # Stop detection if running
             if self.is_detecting:
                 self.stop_detection()
