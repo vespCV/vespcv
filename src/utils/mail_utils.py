@@ -8,8 +8,19 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 from src.core.logger import logger
-import tkinter as tk
-from tkinter import messagebox
+
+def safe_showerror(title, message):
+    try:
+        import tkinter as tk
+        root = tk._default_root
+        if root and root.winfo_exists():
+            from tkinter import messagebox
+            messagebox.showerror(title, message)
+        else:
+            print(f"{title}: {message}")
+    except Exception as e:
+        print(f"Could not show error dialog: {e}")
+        print(f"{title}: {message}")
 
 def check_email_credentials():
     """Check if email credentials are properly set in environment variables.
@@ -28,6 +39,7 @@ def check_email_credentials():
             'export EMAIL_PASS="your_email_password"\n\n'
             "Then run: source ~/.bashrc"
         )
+        safe_showerror("Email Configuration Error", error_msg)
         return False, error_msg
     return True, ""
 
@@ -48,7 +60,7 @@ def send_warning_email(subject, body, annotated_image_path, non_annotated_image_
         credentials_valid, error_msg = check_email_credentials()
         if not credentials_valid:
             logger.error(error_msg)
-            messagebox.showerror("Email Configuration Error", error_msg)
+            # safe_showerror already called in check_email_credentials
             return False
 
         # Get email credentials from environment variables
@@ -89,7 +101,7 @@ def send_warning_email(subject, body, annotated_image_path, non_annotated_image_
     except Exception as e:
         error_msg = f"Failed to send warning email: {str(e)}"
         logger.error(error_msg)
-        messagebox.showerror("Email Error", error_msg)
+        safe_showerror("Email Error", error_msg)
         return False
 
 print("EMAIL_USER:", os.getenv("EMAIL_USER"))
