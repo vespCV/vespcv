@@ -91,3 +91,6 @@ def send_warning_email(subject, body, annotated_image_path, non_annotated_image_
         logger.error(error_msg)
         messagebox.showerror("Email Error", error_msg)
         return False
+
+print("EMAIL_USER:", os.getenv("EMAIL_USER"))
+print("EMAIL_PASS:", os.getenv("EMAIL_PASS"))
