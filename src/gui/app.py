@@ -738,10 +738,32 @@ class vespcvGUI(tk.Tk):
             self.logger.info("Mail alert already sent - cannot be reactivated")
 
     def on_close(self):
-        if hasattr(self, '_after_id') and self._after_id is not None:
-            self.after_cancel(self._after_id)
-            self._after_id = None
-        self.destroy()
+        """Handle window closing event."""
+        try:
+            # Cancel all scheduled callbacks
+            if hasattr(self, '_after_id') and self._after_id is not None:
+                self.after_cancel(self._after_id)
+                self._after_id = None
+            
+            # Stop detection if running
+            if self.is_detecting:
+                self.stop_detection()
+            
+            # Cleanup LED controller
+            if hasattr(self, 'led_controller'):
+                self.led_controller.cleanup()
+            
+            # Cleanup detector
+            if hasattr(self, 'detector'):
+                self.detector.shutdown()
+            
+            # Destroy the window
+            self.destroy()
+            
+        except Exception as e:
+            self.logger.error(f"Error during application shutdown: {e}")
+            # Force destroy the window even if there's an error
+            self.destroy()
 
 if __name__ == "__main__":
     app = vespcvGUI()
