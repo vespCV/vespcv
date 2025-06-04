@@ -8,6 +8,7 @@ The vespCV project aims to develop an automated detection system for the invasiv
 - [Installation Instructions](#installation-instructions)
 - [Usage Guide](#usage-guide)
 - [Using Your Raspberry Pi Remotely](#using-your-raspberry-pi-remotely)
+- [Advanced configuration](#advanced-configuration)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 - [Additional Resources](#additional-resources)
