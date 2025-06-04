@@ -162,11 +162,6 @@ class vespcvGUI(tk.Tk):
         self.led_button = ttk.Button(header_frame, text="GPIO", style='LED.TButton', command=self.toggle_led_control)
         self.led_button.pack(side=tk.LEFT, padx=2)
 
-        # LED indicator (use tk.Label for color control)
-        self.led_indicator = tk.Label(header_frame, text="●", font=("Arial", 24, "bold"), fg="black", bg="#FFF8E1")
-        self.led_indicator.pack(side=tk.LEFT, padx=8)
-        self._update_led_indicator()
-
     def create_main_content(self):
         # Main area with live feed, detections, and charts
         main_frame = ttk.Frame(self)
@@ -413,9 +408,6 @@ class vespcvGUI(tk.Tk):
                         self.logger.info("Warning email sent for vvel detection")
                 except Exception as e:
                     self.logger.error(f"Failed to send warning email: {e}")
-
-            # Immediately update the LED indicator after a detection
-            self._update_led_indicator()
         except Exception as e:
             self.logger.error(f"Error updating GUI: {e}")
 
@@ -694,45 +686,38 @@ class vespcvGUI(tk.Tk):
             self.led_controller.set_enabled(new_enabled)
             self.detector.led_controller = self.led_controller
             
-            # Immediately update indicator
-            self._update_led_indicator()
+            # Update button style based on enabled state
+            if new_enabled:
+                self.led_button.configure(style='Red.TButton')  # GPIO armed
+            else:
+                self.led_button.configure(style='LED.TButton')  # GPIO OFF (gray)
         except Exception as e:
             self.logger.error(f"Error toggling LED control: {e}")
             self.led_controller.set_enabled(False)
             self.detector.led_controller = self.led_controller
             self.led_button.configure(style='LED.TButton')
-            self._update_led_indicator()
 
     def _update_led_status(self):
         """Update LED status periodically."""
         try:
-            self._update_led_indicator()
+            status = self.led_controller.get_status()
+            if status:
+                self.led_button.configure(style='Yellow.TButton')  # GPIO ON (after detection)
+            else:
+                if self.led_controller.enabled:
+                    self.led_button.configure(style='Red.TButton')  # GPIO armed, but not ON
+                else:
+                    self.led_button.configure(style='LED.TButton')  # GPIO OFF (gray)
         except Exception as e:
             self.logger.error(f"Error updating LED status: {e}")
         finally:
             # Schedule next update
             self.after(100, self._update_led_status)
 
-    def _update_led_indicator(self):
-        """Update the LED indicator color and GPIO button style based on current status."""
-        try:
-            status = self.led_controller.get_status()
-            if status:
-                self.led_indicator.config(fg='yellow')
-                self.led_button.configure(style='Yellow.TButton')  # GPIO ON (after detection)
-            else:
-                self.led_indicator.config(fg='black')
-                if self.led_controller.enabled:
-                    self.led_button.configure(style='Red.TButton')  # GPIO armed, but not ON
-                else:
-                    self.led_button.configure(style='LED.TButton')  # GPIO OFF (gray)
-        except Exception as e:
-            self.logger.error(f"Error updating LED indicator: {e}")
-
     def _start_led_timer(self):
         """Start a periodic timer to check and turn off the LED."""
         self.led_controller.check_and_turn_off()
-        self._update_led_indicator()
+        self._update_led_status()
         self.after(500, self._start_led_timer)
 
     def on_mail_button_click(self):
