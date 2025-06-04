@@ -130,6 +130,9 @@ class vespcvGUI(tk.Tk):
         # Start LED timer
         self._start_led_timer()
 
+        # Bind the close event to the on_close method
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+
     def _init_components(self):
         """Initialize all GUI components."""
         # Initialize image queue and handlers
@@ -520,119 +523,94 @@ class vespcvGUI(tk.Tk):
             # Create new figure and axes
             fig, ax = plt.subplots(figsize=(6, 4))
             
+            # Get current time and interval settings
+            now = datetime.now()
+            interval_minutes = self.config.get('chart_interval', 1)
+            N = 10  # Number of intervals to show
+            interval_format = "%H:%M"
+
+            # Build a list of the last N intervals ending with the current one
+            full_intervals = [
+                (now - timedelta(minutes=(N - 1 - i) * interval_minutes)).strftime(interval_format)
+                for i in range(N)
+            ]
+
             if hasattr(self, 'detection_timeline') and self.detection_timeline:
                 # Convert timestamps to datetime objects and group by configured interval
                 from collections import defaultdict
                 
                 # Group detections by interval and class
                 interval_counts = defaultdict(lambda: {'vvel': 0, 'other': 0})
+                
+                # Convert full_intervals to datetime objects for comparison
+                interval_times = [
+                    datetime.strptime(interval, interval_format).replace(
+                        year=now.year, month=now.month, day=now.day
+                    )
+                    for interval in full_intervals
+                ]
+                
                 for timestamp, class_name in self.detection_timeline:
                     if class_name != "no_detection":  # Only count actual detections
                         # Convert timestamp to datetime
                         dt = datetime.strptime(timestamp, "%Y%m%d-%H%M%S")
-                        # Round down to nearest interval
-                        minutes = dt.hour * 60 + dt.minute
-                        interval_start = minutes - (minutes % self.config.get('chart_interval', 1))
-                        interval_key = f"{interval_start // 60:02d}:{interval_start % 60:02d}"
                         
-                        # Count vvel (class 3) separately
-                        if class_name == 'vvel':
-                            interval_counts[interval_key]['vvel'] += 1
-                        else:
-                            interval_counts[interval_key]['other'] += 1
+                        # Find which interval this detection belongs to
+                        for i, interval_time in enumerate(interval_times):
+                            if i < len(interval_times) - 1:
+                                next_interval = interval_times[i + 1]
+                                if interval_time <= dt < next_interval:
+                                    interval_key = full_intervals[i]
+                                    if class_name == 'vvel':
+                                        interval_counts[interval_key]['vvel'] += 1
+                                    else:
+                                        interval_counts[interval_key]['other'] += 1
+                                    break
+                            else:
+                                # Last interval
+                                if dt >= interval_time:
+                                    interval_key = full_intervals[i]
+                                    if class_name == 'vvel':
+                                        interval_counts[interval_key]['vvel'] += 1
+                                    else:
+                                        interval_counts[interval_key]['other'] += 1
                 
-                # Get current interval key
-                now = datetime.now()
-                interval_minutes = self.config.get('chart_interval', 1)
-                minutes = now.hour * 60 + now.minute
-                interval_start = minutes - (minutes % interval_minutes)
-                current_interval_key = f"{interval_start // 60:02d}:{interval_start % 60:02d}"
-
-                # Ensure the current interval is present in the data
-                if current_interval_key not in interval_counts:
-                    interval_counts[current_interval_key] = {'vvel': 0, 'other': 0}
-
-                # 1. Find the earliest and latest interval
-                all_interval_keys = list(interval_counts.keys())
-                all_interval_keys.append(current_interval_key)
-                all_interval_keys = sorted(set(all_interval_keys))
-
-                # Convert interval keys to datetime objects for range calculation
-                interval_format = "%H:%M"
-                interval_times = [datetime.strptime(k, interval_format) for k in all_interval_keys]
-                start_time = min(interval_times)
-                end_time = max(interval_times)
-
-                # 2. Build a complete list of intervals
-                num_intervals = int(((end_time - start_time).total_seconds() // 60) // interval_minutes) + 1
-                full_intervals = [
-                    (start_time + timedelta(minutes=i * interval_minutes)).strftime(interval_format)
-                    for i in range(num_intervals)
-                ]
-
-                # 3. Fill missing intervals with zero counts
-                for interval in full_intervals:
-                    if interval not in interval_counts:
-                        interval_counts[interval] = {'vvel': 0, 'other': 0}
-
-                # 4. Prepare data for plotting
-                sorted_intervals = full_intervals
-                vvel_counts = [interval_counts[interval]['vvel'] for interval in sorted_intervals]
-                other_counts = [interval_counts[interval]['other'] for interval in sorted_intervals]
-                
-                # Add dummy intervals for padding
-                dummy_left = ''
-                dummy_right = ''
-                sorted_intervals = [dummy_left] + sorted_intervals + [dummy_right]
-                vvel_counts = [0] + vvel_counts + [0]
-                other_counts = [0] + other_counts + [0]
-                
-                # Create stacked bar chart
-                x = np.arange(len(sorted_intervals))
-                bar_width = 0.1
-                bars_vvel = ax.bar(x, vvel_counts, width=bar_width, color='#FF0000', alpha=0.7, label='Vespa velutina')
-                bars_other = ax.bar(x, other_counts, width=bar_width, bottom=vvel_counts, color='#808080', alpha=0.7, label='Other species')
-                
-                # Add count labels on top of bars
-                for i, (vvel, other) in enumerate(zip(vvel_counts, other_counts)):
-                    total = vvel + other
-                    if total > 0:  # Only add label if there are detections
-                        ax.text(i, total, f'{total}',
-                                ha='center', va='bottom')
-                
-                # ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
-                ax.set_ylabel('Number of Detections')
-                # ax.set_title(f'Detections per {interval_minutes} Minute{plural}')  # <-- Remove or comment out this line
-                ax.legend(loc='upper right')
-                plt.xticks(rotation=45, ha='right')
-                ax.grid(True, linestyle='--', alpha=0.3)
-                plt.tight_layout()
+                # Prepare data for plotting using the fixed intervals
+                vvel_counts = [interval_counts[interval]['vvel'] for interval in full_intervals]
+                other_counts = [interval_counts[interval]['other'] for interval in full_intervals]
             else:
-                # Show the last N intervals, even if there are no detections yet
-                now = datetime.now()
-                interval_minutes = self.config.get('chart_interval', 1)
-                N = 5  # Number of intervals to show (change as needed)
-                interval_format = "%H:%M"
-
-                # Build a list of the last N intervals ending with the current one
-                full_intervals = [
-                    (now - timedelta(minutes=(N - 1 - i) * interval_minutes)).strftime(interval_format)
-                    for i in range(N)
-                ]
+                # No detections yet, use zero counts
                 vvel_counts = [0] * N
                 other_counts = [0] * N
 
-                # Create stacked bar chart (all empty)
-                bars_vvel = ax.bar(full_intervals, vvel_counts, color='#FF0000', alpha=0.7, label='Vespa velutina')
-                bars_other = ax.bar(full_intervals, other_counts, bottom=vvel_counts, color='#808080', alpha=0.7, label='Other species')
-
-                # ax.set_xlabel(f'Time (HH:MM) - {interval_minutes} min intervals')
-                ax.set_ylabel('Number of Detections')
-                # ax.set_title(f'Detections per {interval_minutes} Minute{plural}')
-                ax.legend(loc='upper right')
-                plt.xticks(rotation=45, ha='right')
-                ax.grid(True, linestyle='--', alpha=0.3)
-                plt.tight_layout()
+            # Create stacked bar chart
+            x = np.arange(len(full_intervals))
+            bar_width = 0.8  # Increased bar width for better visibility
+            bars_vvel = ax.bar(x, vvel_counts, width=bar_width, color='#FF0000', alpha=0.7, label='Vespa velutina')
+            bars_other = ax.bar(x, other_counts, width=bar_width, bottom=vvel_counts, color='#808080', alpha=0.7, label='Other species')
+            
+            # Add count labels on top of bars
+            for i, (vvel, other) in enumerate(zip(vvel_counts, other_counts)):
+                total = vvel + other
+                if total > 0:  # Only add label if there are detections
+                    ax.text(i, total, f'{total}',
+                            ha='center', va='bottom')
+            
+            # Set x-axis labels
+            ax.set_xticks(x)
+            ax.set_xticklabels(full_intervals, rotation=45, ha='right')
+            
+            # Set y-axis label
+            ax.set_ylabel('Number of Detections')
+            
+            # Add legend
+            ax.legend(loc='upper right')
+            
+            # Add grid
+            ax.grid(True, linestyle='--', alpha=0.3)
+            
+            # Adjust layout to prevent label cutoff
+            plt.tight_layout()
 
             # Embed in Tkinter
             canvas = FigureCanvasTkAgg(fig, master=self.charts_frame)
@@ -641,6 +619,7 @@ class vespcvGUI(tk.Tk):
             
         except Exception as e:
             self.logger.error(f"Error redrawing timeline chart: {e}")
+            self.logger.error(f"Error details: {str(e)}")
 
     def on_live_feed_frame_resize(self, event):
         """Handle live feed frame resize events."""
@@ -698,21 +677,23 @@ class vespcvGUI(tk.Tk):
             self.led_button.configure(style='LED.TButton')
 
     def _update_led_status(self):
-        """Update LED status periodically."""
+        if not self.winfo_exists():
+            return
         try:
             status = self.led_controller.get_status()
             if status:
-                self.led_button.configure(style='Yellow.TButton')  # GPIO ON (after detection)
+                self.led_button.configure(style='Yellow.TButton')
             else:
                 if self.led_controller.enabled:
-                    self.led_button.configure(style='Red.TButton')  # GPIO armed, but not ON
+                    self.led_button.configure(style='Red.TButton')
                 else:
-                    self.led_button.configure(style='LED.TButton')  # GPIO OFF (gray)
+                    self.led_button.configure(style='LED.TButton')
         except Exception as e:
             self.logger.error(f"Error updating LED status: {e}")
         finally:
-            # Schedule next update
-            self.after(100, self._update_led_status)
+            if hasattr(self, '_after_id') and self._after_id is not None:
+                self.after_cancel(self._after_id)
+            self._after_id = self.after(100, self._update_led_status)
 
     def _start_led_timer(self):
         """Start a periodic timer to check and turn off the LED."""
@@ -755,6 +736,12 @@ class vespcvGUI(tk.Tk):
                 self.logger.info("Mail alert deactivated")
         else:
             self.logger.info("Mail alert already sent - cannot be reactivated")
+
+    def on_close(self):
+        if hasattr(self, '_after_id') and self._after_id is not None:
+            self.after_cancel(self._after_id)
+            self._after_id = None
+        self.destroy()
 
 if __name__ == "__main__":
     app = vespcvGUI()
