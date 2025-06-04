@@ -17,6 +17,7 @@ from src.core.detector import DetectionController
 from src.utils.led_controller import LEDController
 from datetime import datetime, timedelta
 from src.utils.mail_utils import send_warning_email  # Import the email function
+from src.utils.image_utils import ImageHandler, create_placeholder_image, create_thumbnail
 
 class ImageHandler:
     def __init__(self, logger):
@@ -217,7 +218,7 @@ class vespcvGUI(tk.Tk):
         self.create_log_display(log_frame)
 
     def create_saved_detections_section(self, parent_frame):
-        """This method will create the content inside the Saved Detections LabelFrame"""
+        """This method will create the content inside the Gedetecteerde Hoornaars"""
         
         # Frame for the detection grid placeholders
         detections_grid_frame = ttk.Frame(parent_frame)
@@ -247,86 +248,69 @@ class vespcvGUI(tk.Tk):
         # Add image frames to the grid
         for i, (image_name, _, time_part) in enumerate(top_images):
             image_path = os.path.join(images_folder, image_name)
-            try:
-                img = Image.open(image_path)
-                img.thumbnail((120, 90))
-                photo = ImageTk.PhotoImage(img)
-            except Exception as e:
-                self.logger.error(f"Failed to load thumbnail for {image_path}: {e}")
-                continue
+            photo = create_thumbnail(image_path, (120, 90))
+            if photo:
+                # Create a frame for each image
+                placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120)
+                placeholder_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=6, pady=6)
 
-            # Create a frame for each image
-            placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120)
-            placeholder_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=6, pady=6)
-
-            # Add the image to the frame
-            label = ttk.Label(placeholder_frame, image=photo)
-            label.image = photo  # Keep a reference to avoid garbage collection
-            label.pack(expand=True, fill=tk.BOTH)
-            
-            # Add click event to download original image
-            def create_click_handler(original_path):
-                def on_click(event):
-                    try:
-                        # Get the original image path from yolo_jpg_txt directory
-                        yolo_dir = os.path.join('data', 'yolo_jpg_txt')
-                        original_filename = os.path.basename(original_path)
-                        original_image_path = os.path.join(yolo_dir, original_filename)
-                        
-                        if os.path.exists(original_image_path):
-                            # Try to use Desktop first, fallback to Downloads folder
-                            home_dir = os.path.expanduser("~")
-                            desktop_path = os.path.join(home_dir, "Desktop")
-                            downloads_path = os.path.join(home_dir, "Downloads")
-                            
-                            # Create the target directory if it doesn't exist
-                            target_dir = desktop_path if os.path.exists(desktop_path) else downloads_path
-                            os.makedirs(target_dir, exist_ok=True)
-                            
-                            # Copy the original image to the target directory
-                            import shutil
-                            download_path = os.path.join(target_dir, original_filename)
-                            shutil.copy2(original_image_path, download_path)
-                            
-                            # Log the download
-                            self.logger.info(f"Original image downloaded to: {download_path}")
-                            
-                            # Show success message
-                            tk.messagebox.showinfo("Download", f"Image downloaded to: {download_path}")
-                        else:
-                            tk.messagebox.showerror("Error", "Original image not found")
-                    except Exception as e:
-                        self.logger.error(f"Error downloading image: {e}")
-                        tk.messagebox.showerror("Error", f"Failed to download image: {str(e)}")
+                # Add the image to the frame
+                label = ttk.Label(placeholder_frame, image=photo)
+                label.image = photo  # Keep a reference to avoid garbage collection
+                label.pack(expand=True, fill=tk.BOTH)
                 
-                return on_click
-            
-            # Bind click event to the label
-            label.bind('<Button-1>', create_click_handler(image_path))
+                # Add click event to download original image
+                def create_click_handler(original_path):
+                    def on_click(event):
+                        try:
+                            # Get the original image path from yolo_jpg_txt directory
+                            yolo_dir = os.path.join('data', 'yolo_jpg_txt')
+                            original_filename = os.path.basename(original_path)
+                            original_image_path = os.path.join(yolo_dir, original_filename)
+                            
+                            if os.path.exists(original_image_path):
+                                # Try to use Desktop first, fallback to Downloads folder
+                                home_dir = os.path.expanduser("~")
+                                desktop_path = os.path.join(home_dir, "Desktop")
+                                downloads_path = os.path.join(home_dir, "Downloads")
+                                
+                                # Create the target directory if it doesn't exist
+                                target_dir = desktop_path if os.path.exists(desktop_path) else downloads_path
+                                os.makedirs(target_dir, exist_ok=True)
+                                
+                                # Copy the original image to the target directory
+                                import shutil
+                                download_path = os.path.join(target_dir, original_filename)
+                                shutil.copy2(original_image_path, download_path)
+                                
+                                # Log the download
+                                self.logger.info(f"Original image downloaded to: {download_path}")
+                                
+                                # Show success message
+                                tk.messagebox.showinfo("Download", f"Image downloaded to: {download_path}")
+                            else:
+                                tk.messagebox.showerror("Error", "Original image not found")
+                        except Exception as e:
+                            self.logger.error(f"Error downloading image: {e}")
+                            tk.messagebox.showerror("Error", f"Failed to download image: {str(e)}")
+                    
+                    return on_click
+                
+                # Bind click event to the label
+                label.bind('<Button-1>', create_click_handler(image_path))
 
-            # Format timestamp to hh:mm:ss
-            if len(time_part) == 6:
-                formatted_time = f"{time_part[:2]}:{time_part[2:4]}:{time_part[4:]}"
-            else:
-                formatted_time = time_part  # fallback
+                # Format timestamp to hh:mm:ss
+                if len(time_part) == 6:
+                    formatted_time = f"{time_part[:2]}:{time_part[2:4]}:{time_part[4:]}"
+                else:
+                    formatted_time = time_part  # fallback
 
-            ttk.Label(placeholder_frame, text=formatted_time, anchor="center").pack(expand=True, fill=tk.BOTH)
+                ttk.Label(placeholder_frame, text=formatted_time, anchor="center").pack(expand=True, fill=tk.BOTH)
 
         # Add placeholders if there are fewer than 4 images
         for _ in range(num_placeholders):
-            # Create a blank image (e.g., gray background)
-            img = Image.new('RGB', (120, 90), color=(200, 200, 200))
-            draw = ImageDraw.Draw(img)
-            # Add text in the center
-            text = "No detection"
-            font = ImageFont.load_default()
-            bbox = draw.textbbox((0, 0), text, font=font)
-            text_width = bbox[2] - bbox[0]
-            text_height = bbox[3] - bbox[1]
-            draw.text(
-                ((120 - text_width) // 2, (90 - text_height) // 2),
-                text, fill=(100, 100, 100), font=font
-            )
+            # Create a placeholder image
+            img = create_placeholder_image(120, 90)
             photo = ImageTk.PhotoImage(img)
             placeholder_frame = ttk.Frame(detections_grid_frame, width=100, height=120)
             placeholder_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=6, pady=6)
@@ -468,7 +452,7 @@ class vespcvGUI(tk.Tk):
                     self.after(100, lambda: self.update_live_feed(image_path))
                     return
                 
-                # Load and resize image
+                # Load and resize image using ImageHandler
                 img = self.image_handler.load_and_resize_image(
                     image_path,
                     (canvas_width, canvas_height)
