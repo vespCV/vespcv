@@ -155,7 +155,7 @@ class vespcvGUI(tk.Tk):
         # Add the main title
         ttk.Label(header_frame, text="Aziatisch-/Geelpotige Hoornaar Detector", font=("Arial", 24, "bold")).pack(side=tk.LEFT, expand=True)
 
-        # Add START, STOP, MAIL, GPIO, LED (left to right)
+        # Add START, STOP, MAIL, GPIO (left to right)
         self.start_button = ttk.Button(header_frame, text="START", style='Green.TButton', command=self.start_detection)
         self.start_button.pack(side=tk.LEFT, padx=2)
         self.stop_button = ttk.Button(header_frame, text="STOP", style='Orange.TButton', command=self.stop_detection)
@@ -682,12 +682,14 @@ class vespcvGUI(tk.Tk):
         try:
             status = self.led_controller.get_status()
             if status:
-                self.led_button.configure(style='Yellow.TButton')
+                self.led_indicator.config(fg='yellow')
+                self.led_button.configure(style='Yellow.TButton')  # GPIO ON (after detection)
             else:
+                self.led_indicator.config(fg='black')
                 if self.led_controller.enabled:
-                    self.led_button.configure(style='Red.TButton')
+                    self.led_button.configure(style='Red.TButton')  # GPIO armed, but not ON
                 else:
-                    self.led_button.configure(style='LED.TButton')
+                    self.led_button.configure(style='LED.TButton')  # GPIO OFF (gray)
         except Exception as e:
             self.logger.error(f"Error updating LED status: {e}")
         finally:
@@ -719,11 +721,11 @@ class vespcvGUI(tk.Tk):
                 # Send the email
                 send_warning_email(subject, body, annotated_image_path, non_annotated_image_path)
                 self.email_sent = True  # Set the flag to true after sending the email
-                messagebox.showinfo("Email Sent", "The email has been sent successfully!")
+                tk.messagebox.showinfo("Email Sent", "The email has been sent successfully!")
             else:
-                messagebox.showwarning("No Detection", "No Vespa velutina detected yet.")
+                tk.messagebox.showwarning("No Detection", "No Vespa velutina detected yet.")
         else:
-            messagebox.showinfo("Email Already Sent", "The email has already been sent.")
+            tk.messagebox.showinfo("Email Already Sent", "The email has already been sent.")
 
     def toggle_mail_alert(self):
         """Toggle the mail alert functionality."""
