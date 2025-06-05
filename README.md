@@ -45,27 +45,24 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
        - **password**: `choose-a-save-password`
        - Configure other options according to your Wi-Fi and time zone settings.
    - Detailed information can be found [here](https://www.raspberrypi.com/documentation/computers/getting-started.html).
+   - Connect a keyboard and monitor to the Raspberry Pi, or alternatively, use SSH or [Raspberry Pi Connect](https://www.raspberrypi.com/software/connect/) for remote access.
 
-2. Create a directory in your home folder:
+2. Clone the repository:
    ```bash
-   mkdir vespcv
-   cd vespcv
-   ```
-
-3. Clone the repository:
-   ```bash
+   sudo apt update
+   sudo apt upgrade -y
    git clone https://github.com/vespCV/vespcv.git
    cd vespcv
    ```
 
-4. Set up the virtual environment and install dependencies:
+3. Set up the virtual environment and install dependencies:
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    pip install -r requirements.txt
    ```
 
-5. Create a launch script named `start_vespcv`:
+4. Create a launch script named `start_vespcv`:
    ```bash
    nano /home/vcv/start_vespcv
    ```
@@ -93,23 +90,12 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    - Press `Y` to confirm
    - Press `Enter` to save
 
-   Make the script executable:
+5. Make the script executable:
    ```bash
    chmod +x /home/vcv/start_vespcv
    ```
 
-6. Set up autostart with GUI:
-   ```bash
-   # Open the crontab editor
-   crontab -e
-   ```
-   Add this line to start the application at boot:
-   ```bash
-   @reboot sleep 30 && /home/vcv/start_vespcv >> /home/vcv/vespcv/data/logs/startup.log 2>&1
-   ```
-   The `sleep 30` ensures the system is fully booted before starting the application.
-
-7. **Email Configuration (Optional)**:
+6. **Email Configuration (Optional)**:
    If you don't want email alerts, or if the Raspberry Pi has no connection to Wi-Fi when detecting, you can skip this step. To receive email notifications when an Asian hornet is detected, follow these steps:
    - **Create a Gmail Account**: Create an account for your hornet detector. You can use an existing email or create a new one for safety and to avoid spam.
    - **Enable Two-Factor Authentication (2FA)**: Activate 2FA for your Gmail account to enhance security.
@@ -119,14 +105,37 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
      export EMAIL_USER="your_email@gmail.com"
      export EMAIL_PASS="your_app_password"
      ```
-   - **Apply Changes**: Run the following command to apply the changes:
-     ```bash
-     source ~/.bashrc
-     ```
+
+   Save the file by pressing:
+   - `Ctrl + X`
+   - Press `Y` to confirm
+   - Press `Enter` to save
+
+7. Make the script executable:
+   ```bash
+   chmod +x /home/vcv/start_vespcv
+   ```
 
 ### Important Notes:
 - Ensure that you store your email credentials securely. Avoid pushing `.bashrc` or any files containing sensitive data to version control.
 - An email notification is sent automatically when the first Vespa velutina is detected.
+
+8. **Apply Changes**: 
+   Run the following command to apply the changes:
+   ```bash
+   source ~/.bashrc
+   ```
+
+9. Set up autostart with GUI:
+   ```bash
+   # Open the crontab editor
+   crontab -e
+   ```
+   Add this line to start the application at boot:
+   ```bash
+   @reboot sleep 30 && /home/vcv/start_vespcv >> /home/vcv/vespcv/data/logs/startup.log 2>&1
+   ```
+   The `sleep 30` ensures the system is fully booted before starting the application.
 
 ## Usage Guide
 
