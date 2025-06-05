@@ -137,7 +137,7 @@ For the setup of the Raspberry Pi and camera module 3 check the official [docume
 2. Type `./start_vespcv` and press Enter
 3. The application window will open automatically
 
-![Start Screen](doc/StartScreen.png)
+![Start Screen](doc/images/StartScreen.png)
 
 ### Understanding the Interface
 
@@ -190,7 +190,7 @@ The application interface consists of the following sections:
 - Keep the camera lens clean and free from obstructions
 - Position the camera in a well-lit area for better detection
 
-![Detections](doc/Detections.png)
+![Detections](doc/images/Detections.png)
 
 ## Using Your Raspberry Pi Remotely
 
