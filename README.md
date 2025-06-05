@@ -116,15 +116,15 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    chmod +x /home/vcv/start_vespcv
    ```
 
-### Important Notes:
-- Ensure that you store your email credentials securely. Avoid pushing `.bashrc` or any files containing sensitive data to version control.
-- An email notification is sent automatically when the first Vespa velutina is detected.
+     ### Important Notes:
+    - Ensure that you store your email credentials securely. Avoid pushing `.bashrc` or any files containing sensitive data to version control.
+    - An email notification is sent automatically when the first Vespa velutina is detected.
 
 8. **Apply Changes**: 
    Run the following command to apply the changes:
-   ```bash
-   source ~/.bashrc
-   ```
+     ```bash
+     source ~/.bashrc
+     ```
 
 9. Set up autostart with GUI:
    ```bash
