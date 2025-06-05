@@ -16,7 +16,7 @@ import numpy as np
 from src.core.detector import DetectionController
 from src.utils.led_controller import LEDController
 from datetime import datetime, timedelta
-from src.utils.mail_utils import send_warning_email  # Import the email function
+from src.utils.mail_utils import send_warning_email, safe_showerror  # Import the email function
 from src.utils.image_utils import ImageHandler, create_placeholder_image, create_thumbnail
 
 class ImageHandler:
@@ -290,7 +290,7 @@ class vespcvGUI(tk.Tk):
                                 tk.messagebox.showerror("Error", "Original image not found")
                         except Exception as e:
                             self.logger.error(f"Error downloading image: {e}")
-                            tk.messagebox.showerror("Error", f"Failed to download image: {str(e)}")
+                            safe_showerror("Error", f"Failed to download image: {str(e)}")
                     
                     return on_click
                 
@@ -403,7 +403,6 @@ class vespcvGUI(tk.Tk):
                     non_annotated_image_path = os.path.join(self.config['images_folder'], 'image_for_detection.jpg')
                     
                     # Send the email
-                    from src.utils.mail_utils import send_warning_email
                     if send_warning_email(subject, body, annotated_image_path, non_annotated_image_path):
                         # Only update button state and flag if email was sent successfully
                         self.mail_button.configure(style='LED.TButton')  # Change back to gray
