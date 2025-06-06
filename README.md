@@ -101,16 +101,22 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    - **Create a Gmail Account**: Create an account for your hornet detector. You can use an existing email or create a new one for safety and to avoid spam.
    - **Enable Two-Factor Authentication (2FA)**: Activate 2FA for your Gmail account to enhance security.
    - **Generate an App Password**: Create an [app password](https://support.google.com/mail/answer/185833?hl=en#:~:text=in%20or%20out-,Sign%20in%20with%20app%20passwords,-Sign%20in%20with) for your account. This password will be used instead of your regular email password.
-   - **Configure Email Credentials**: Add your email address and app password to your `.bashrc` file:
-     ```bash
-     export EMAIL_USER="your_email@gmail.com"
-     export EMAIL_PASS="your_app_password"
-     ```
+   - **Configure Email Credentials**: To receive email notifications when an Asian hornet is detected, you need to set up your email credentials. Follow these steps:
+     - **Create a new file** in your home directory to store your email credentials:
+        ```bash
+        nano ~/.vespcv_credentials
+        ```
+     - **Add your email address and app password** to the file. Replace `your_email@gmail.com` and `your_app_password` with your actual email and the app password you generated:
+        ```bash
+        export EMAIL_USER="your_email@gmail.com"
+        export EMAIL_PASS="your_app_password"
+        ```
+     - **Save the file** by pressing:
+        - `Ctrl + X` to exit
+        - Press `Y` to confirm changes
+        - Press `Enter` to save
 
-   Save the file by pressing:
-   - `Ctrl + X`
-   - Press `Y` to confirm
-   - Press `Enter` to save
+     **Important**: Ensure that you store your email credentials securely. Avoid pushing this file to version control to protect your sensitive information.
 
 7. Make the script executable:
    ```bash
