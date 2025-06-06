@@ -11,18 +11,14 @@ log_file_path: 'data/logs/detector.log'
 
 
 # Detection settings
+
 # Confidence threshold for detection
 # A higher threshold means the model is more confident about the detection
 # Default is 0.80
 conf_threshold: 0.80
 
 # Class names for detection
-class_names: 
-  - 'amel'
-  - 'vcra'
-  - 'vespsp'
-  - 'vvel'
-  - 'vzon'
+class_names: ['amel', 'vcra', 'vespsp', 'vvel', 'vzon']
 
 
 # Camera settings
