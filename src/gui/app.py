@@ -1,21 +1,26 @@
-import tkinter as tk
-from tkinter import ttk
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter import scrolledtext # Import scrolledtext for a text area with a scrollbar
-import threading
-import time
+# Standard library imports
 import os
-from PIL import Image, ImageTk, ImageDraw, ImageFont
-import cv2
 import queue
 import logging
+import threading
+import time
+from datetime import datetime, timedelta
 from threading import Lock
 from typing import Optional, List, Dict
+
+# Third-party library imports
+import cv2
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from PIL import Image, ImageTk, ImageDraw, ImageFont
+import tkinter as tk
+from tkinter import ttk
+from tkinter import scrolledtext  # Import scrolledtext for a text area with a scrollbar
+
+# Local application/library imports
 from src.core.detector import DetectionController
 from src.utils.led_controller import LEDController
-from datetime import datetime, timedelta
 from src.utils.mail_utils import send_warning_email  # Import only the email function
 from src.utils.image_utils import ImageHandler, create_placeholder_image, create_thumbnail
 
