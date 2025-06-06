@@ -122,7 +122,7 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
       ```
     - This command restricts access so that only the file owner can read and write it.
 
-**Important**: Always store your email credentials securely. Avoid pushing this file to version control to protect your sensitive information. It’s advisable to create a separate Gmail account specifically for the vespCV detector to enhance security and privacy.
+**Important**: Always store your email credentials securely. Avoid pushing this file to version control to protect your sensitive information. It's advisable to create a separate Gmail account specifically for the vespCV detector to enhance security and privacy.
 
 7. Make the script executable:
    ```bash
@@ -306,6 +306,14 @@ If you encounter any issues, follow these steps:
     ```
   - Verify the IP address hasn't changed.
 
+### GPIO Issues
+- **GPIO Test Script for Connected Hardware**:
+  - The script uses the `config.yaml` file to determine which GPIO pin to test. Ensure you have connected to pin 21 and ground, or change the default pin 21 to the pin you have connected in the `config.yaml`.
+  - To use the `GPIO_test.py` file for testing the GPIO functionality on your Raspberry Pi, run the following command:
+    ```bash
+    export PYTHONPATH=$PYTHONPATH:/home/vcv/vespcv/src
+    python test/GPIO_test.py
+    ```
 
 ## License
 This project is licensed under the GPL Version 3. See the [LICENSE](LICENSE) file for details.
