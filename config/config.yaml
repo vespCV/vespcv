@@ -1,23 +1,42 @@
-# Location of the model weights
+# Location of files and folders
+
+# Model weights
 model_path: "models/yolo112025-04-23default_e200_p20_b-1_augment/weights/best.pt"
 
-# Locaton of the images folder
+# Images folder
 images_folder: "/home/vcv/vespcv/data/images"
 
-# Location of the logfile
+# Log file location
 log_file_path: 'data/logs/detector.log'
 
+
+# Detection settings
 # Confidence threshold for detection
 # A higher threshold means the model is more confident about the detection
-conf_threshold: 0.70
+# Default is 0.80
+conf_threshold: 0.80
 
-# Class names
-class_names: ['amel', 'vcra', 'vespsp', 'vvel', 'vzon']
+# Class names for detection
+class_names: 
+  - 'amel'
+  - 'vcra'
+  - 'vespsp'
+  - 'vvel'
+  - 'vzon'
 
-# lens position 10: Close-up approximately10 c
-# lens position  1: Medium distance, approximately 1 meter
-# lens position  0: Far distance, approximately 3 meters
-# test lenspostition with:
+
+# Camera settings
+
+# Camera type
+# Default is "camera module 3"
+# Change it to "arducam" if you are using Arducam 16MP IMX519 camera
+camera: "arducam"  
+
+# Lens position settings
+# 10: Close-up approximately 10 cm
+# 1: Medium distance, approximately 1 meter
+# 0: Far distance, approximately 3 meters
+# Test lens position with:
 # libcamera-still -t 0 --autofocus-mode continuous --info-text "%lp"
 lensposition: 1
 
@@ -25,11 +44,16 @@ lensposition: 1
 autofocus: true  # Enable or disable autofocus
 autofocus_mode: "continuous"  # Options: "continuous", "single", etc.
 
+
+# Capture settings
 # Interval in seconds between captures
 capture_interval: 15
 
 # Chart interval in minutes for grouping detections
 chart_interval: 15
+
+
+# GPIO settings
 
 # LED Configuration
 led:
