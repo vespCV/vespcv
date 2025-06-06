@@ -1,7 +1,10 @@
 """
 LED Controller module for managing LED operations in the vespCV application.
 """
-
+import time
+import logging
+from threading import Lock
+#old
 import time
 from src.core.logger import logger
 from src.core.config_loader import load_config
@@ -14,6 +17,8 @@ except ImportError:
     GPIO = None
     GPIO_AVAILABLE = False
     logger.warning("RPi.GPIO module not available. Running in simulation mode only.")
+
+logger = logging.getLogger(__name__)
 
 class LEDController:
     def __init__(self, simulation_mode=False):
@@ -29,7 +34,9 @@ class LEDController:
         self.simulation_mode = simulation_mode or not GPIO_AVAILABLE
         self.is_on = False
         self.enabled = False  # Only allow GPIO activation if enabled is True
-        
+        self._lock = Lock()
+        self._last_on_time = 0
+
         logger.info(f"LEDController initialized with on_duration={self.on_duration} seconds (simulation: {self.simulation_mode})")
         
         if not self.simulation_mode:
@@ -59,77 +66,53 @@ class LEDController:
             self.turn_off()  # Always turn off if disabling
         logger.info(f"LEDController enabled set to {self.enabled}")
 
-    def handle_detection(self):
-        """Handle LED control for a new detection."""
-        if not self.enabled:
-            logger.info("Detection ignored: GPIO not enabled.")
-            return
-        current_time = time.time()
-        self.turn_on()
-        self.last_detection_time = current_time
-        logger.info(f"LED turned on due to detection (simulation: {self.simulation_mode}, on_duration={self.on_duration})")
-            
-    def check_and_turn_off(self):
-        """Check if LED should be turned off based on time since last detection."""
-        if not self.enabled:
-            self.turn_off()
-            return
-        current_time = time.time()
-        time_since_detection = current_time - self.last_detection_time
-        if self.is_on and time_since_detection >= self.on_duration:
-            self.turn_off()
-            logger.info(f"LED turned off after {time_since_detection:.1f} seconds (simulation: {self.simulation_mode}, on_duration={self.on_duration})")
-            
     def turn_on(self):
+        """Turn on the LED."""
         if not self.enabled:
-            self.is_on = False
+            return
+            
+        try:
+            if not self.simulation_mode and GPIO_AVAILABLE:
+                GPIO.output(self.pin, GPIO.HIGH)
+            self._last_on_time = time.time()
+            self._is_on = True
+            logger.debug(f"LED turned on, will turn off after {self.on_duration} seconds")
+        except Exception as e:
+            logger.error(f"Error turning on LED: {e}")
+            
+    def turn_off(self):
+        """Turn off the LED."""
+        try:
             if not self.simulation_mode and GPIO_AVAILABLE:
                 GPIO.output(self.pin, GPIO.LOW)
-            logger.info("turn_on() called but GPIO not enabled; LED remains OFF")
-            return
-        if not self.is_on:
-            self.is_on = True
-            if self.simulation_mode:
-                logger.info("Simulated: LED ON")
-            else:
-                try:
-                    GPIO.output(self.pin, GPIO.HIGH)
-                    logger.info("LED turned ON (GPIO activated)")
-                except Exception as e:
-                    logger.error(f"Failed to turn on LED: {e}")
-                    self.simulation_mode = True
+            self._is_on = False
+            logger.debug("LED turned off")
+        except Exception as e:
+            logger.error(f"Error turning off LED: {e}")
+            
+    def get_status(self):
+        """Get the current LED status."""
+        if not self.enabled or not self._is_on:
+            return False
+        return time.time() - self._last_on_time < self.on_duration
         
-    def turn_off(self):
-        if self.is_on or not self.enabled:
-            was_on = self.is_on  # Store the previous state
-            self.is_on = False
-            if self.simulation_mode:
-                if was_on:  # Only log if the LED was actually on
-                    logger.info("Simulated: LED OFF")
-            else:
-                try:
-                    GPIO.output(self.pin, GPIO.LOW)
-                    if was_on:  # Only log if the LED was actually on
-                        logger.info("LED turned OFF (GPIO deactivated)")
-                except Exception as e:
-                    logger.error(f"Failed to turn off LED: {e}")
-                    self.simulation_mode = True
-        
+    def check_and_turn_off(self):
+        """Check if LED should be turned off based on duration."""
+        if self._is_on and time.time() - self._last_on_time >= self.on_duration:
+            logger.debug(f"LED duration of {self.on_duration} seconds reached, turning off")
+            self.turn_off()
+                
+    def handle_detection(self):
+        """Handle a detection event by turning on the LED."""
+        if self.enabled:
+            self.turn_on()
+            
     def cleanup(self):
         """Clean up GPIO resources."""
         if not self.simulation_mode and GPIO_AVAILABLE:
             try:
-                GPIO.cleanup()
+                self.turn_off()  # Ensure LED is off before cleanup
+                GPIO.cleanup(self.pin)
                 logger.info("LED GPIO cleanup completed")
             except Exception as e:
-                logger.error(f"Error during GPIO cleanup: {e}")
-        else:
-            logger.info("LED simulation cleanup completed")
-        self.is_on = False
-        self.enabled = False
-        
-    def get_status(self):
-        """Get the current LED status (True if GPIO is enabled and LED is ON)."""
-        status = self.is_on and self.enabled
-        logger.debug(f"LED status: {status} (enabled: {self.enabled}, simulation: {self.simulation_mode})")
-        return status 
+                logger.error(f"Error during LED GPIO cleanup: {e}") 
