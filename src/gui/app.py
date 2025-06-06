@@ -16,7 +16,7 @@ import numpy as np
 from src.core.detector import DetectionController
 from src.utils.led_controller import LEDController
 from datetime import datetime, timedelta
-from src.utils.mail_utils import send_warning_email, safe_showerror  # Import the email function
+from src.utils.mail_utils import send_warning_email  # Import only the email function
 from src.utils.image_utils import ImageHandler, create_placeholder_image, create_thumbnail
 
 class ImageHandler:
@@ -107,7 +107,8 @@ class vespcvGUI(tk.Tk):
         style.configure('Yellow.TButton', background='yellow', foreground='black')
 
         # Initialize LED controller in simulation mode
-        self.led_controller = LEDController(simulation_mode=True)
+        self.led_controller = LEDController(simulation_mode=False)
+        self.led_controller.set_enabled(False)  # Disable LED control by default for safety
         
         # Initialize a flag to track if the email has been sent
         self.email_sent = False
@@ -124,11 +125,12 @@ class vespcvGUI(tk.Tk):
         # Add a new attribute to store the latest image path
         self.latest_image_path = None
         
-        # Start LED status update
-        self._update_led_status()
+        # Ensure LED button starts in disabled state
+        self.led_button.configure(style='LED.TButton')  # Start with gray (disabled) button
 
-        # Start LED timer
-        self._start_led_timer()
+        # Start LED status update and timer
+        self._update_led_status()
+        self._start_led_timer()  # Start the LED timer immediately
 
         # Bind the close event to the on_close method
         self.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -681,10 +683,8 @@ class vespcvGUI(tk.Tk):
         try:
             status = self.led_controller.get_status()
             if status:
-                self.led_indicator.config(fg='yellow')
                 self.led_button.configure(style='Yellow.TButton')  # GPIO ON (after detection)
             else:
-                self.led_indicator.config(fg='black')
                 if self.led_controller.enabled:
                     self.led_button.configure(style='Red.TButton')  # GPIO armed, but not ON
                 else:
@@ -694,13 +694,19 @@ class vespcvGUI(tk.Tk):
         finally:
             if hasattr(self, '_after_id') and self._after_id is not None:
                 self.after_cancel(self._after_id)
-            self._after_id = self.after(100, self._update_led_status)
+            self._after_id = self.after(10, self._update_led_status)
 
     def _start_led_timer(self):
         """Start a periodic timer to check and turn off the LED."""
-        self.led_controller.check_and_turn_off()
-        self._update_led_status()
-        self._led_timer_id = self.after(500, self._start_led_timer)
+        try:
+            self.led_controller.check_and_turn_off()
+            self._update_led_status()
+        except Exception as e:
+            self.logger.error(f"Error in LED timer: {e}")
+        finally:
+            if hasattr(self, '_led_timer_id'):
+                self.after_cancel(self._led_timer_id)
+            self._led_timer_id = self.after(100, self._start_led_timer)  # Check more frequently (100ms)
 
     def on_mail_button_click(self):
         """Handle the MAIL button click event."""
