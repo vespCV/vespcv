@@ -1,5 +1,5 @@
 """
-Email utility functions for the vespCV application.
+Email utility functions for sending warning emails.
 """
 
 import os
@@ -8,101 +8,49 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 from src.core.logger import logger
-
-def safe_showerror(title, message):
-    try:
-        import tkinter as tk
-        root = tk._default_root
-        if root and root.winfo_exists():
-            from tkinter import messagebox
-            messagebox.showerror(title, message)
-        else:
-            print(f"{title}: {message}")
-    except Exception as e:
-        print(f"Could not show error dialog: {e}")
-        print(f"{title}: {message}")
-
-def check_email_credentials():
-    """Check if email credentials are properly set in environment variables.
-    
-    Returns:
-        tuple: (bool, str) - (credentials_valid, error_message)
-    """
-    sender_email = os.getenv("EMAIL_USER")
-    password = os.getenv("EMAIL_PASS")
-    
-    if not sender_email or not password:
-        error_msg = (
-            "Email credentials not found in environment variables.\n\n"
-            "Please add the following to your ~/.bashrc file:\n\n"
-            'export EMAIL_USER="your_email@gmail.com"\n'
-            'export EMAIL_PASS="your_email_password"\n\n'
-            "Then run: source ~/.bashrc"
-        )
-        safe_showerror("Email Configuration Error", error_msg)
-        return False, error_msg
-    return True, ""
+from src.utils.credentials import get_email_credentials
 
 def send_warning_email(subject, body, annotated_image_path, non_annotated_image_path):
     """Send a warning email with detection images.
     
     Args:
-        subject (str): Email subject
-        body (str): Email body text
-        annotated_image_path (str): Path to the annotated image
-        non_annotated_image_path (str): Path to the non-annotated image
+        subject: Email subject
+        body: Email body text
+        annotated_image_path: Path to the annotated image
+        non_annotated_image_path: Path to the non-annotated image
         
     Returns:
         bool: True if email was sent successfully, False otherwise
     """
     try:
-        # Check credentials first
-        credentials_valid, error_msg = check_email_credentials()
-        if not credentials_valid:
-            logger.error(error_msg)
-            # safe_showerror already called in check_email_credentials
-            return False
-
-        # Get email credentials from environment variables
-        sender_email = os.getenv("EMAIL_USER")
-        password = os.getenv("EMAIL_PASS")
-        receiver_email = os.getenv("EMAIL_RECIPIENT", sender_email)  # Default to sender if no recipient specified
-
-        # Create the email
+        # Get email credentials from the credentials module
+        email_user, email_pass = get_email_credentials()
+        
+        # Create message
         msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = receiver_email
+        msg['From'] = email_user
+        msg['To'] = email_user
         msg['Subject'] = subject
-
-        # Attach the email body
+        
+        # Add body
         msg.attach(MIMEText(body, 'plain'))
-
-        # Attach images if they exist
-        if os.path.exists(annotated_image_path):
-            with open(annotated_image_path, 'rb') as f:
-                msg.attach(MIMEImage(f.read(), name=os.path.basename(annotated_image_path)))
-        else:
-            logger.warning(f"Annotated image not found: {annotated_image_path}")
-
-        if os.path.exists(non_annotated_image_path):
-            with open(non_annotated_image_path, 'rb') as f:
-                msg.attach(MIMEImage(f.read(), name=os.path.basename(non_annotated_image_path)))
-        else:
-            logger.warning(f"Non-annotated image not found: {non_annotated_image_path}")
-
-        # Connect to the server and send email
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(sender_email, password)
+        
+        # Add images
+        for image_path in [annotated_image_path, non_annotated_image_path]:
+            if os.path.exists(image_path):
+                with open(image_path, 'rb') as f:
+                    img = MIMEImage(f.read())
+                    img.add_header('Content-Disposition', 'attachment', filename=os.path.basename(image_path))
+                    msg.attach(img)
+        
+        # Send email
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(email_user, email_pass)
             server.send_message(msg)
-            logger.info("Warning email sent successfully")
-            return True
-
+            
+        logger.info("Warning email sent successfully")
+        return True
+        
     except Exception as e:
-        error_msg = f"Failed to send warning email: {str(e)}"
-        logger.error(error_msg)
-        safe_showerror("Email Error", error_msg)
+        logger.error(f"Failed to send warning email: {e}")
         return False
-
-print("EMAIL_USER:", os.getenv("EMAIL_USER"))
-print("EMAIL_PASS:", os.getenv("EMAIL_PASS"))
