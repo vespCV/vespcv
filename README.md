@@ -115,8 +115,14 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
         - `Ctrl + X` to exit
         - Press `Y` to confirm changes
         - Press `Enter` to save
+    - **Set File Permissions**:
+      - To ensure that only you can read this file, set its permissions with the following command:
+      ```bash
+      chmod 600 ~/.vespcv_credentials
+      ```
+    - This command restricts access so that only the file owner can read and write it.
 
-     **Important**: Ensure that you store your email credentials securely. Avoid pushing this file to version control to protect your sensitive information.
+**Important**: Always store your email credentials securely. Avoid pushing this file to version control to protect your sensitive information. It’s advisable to create a separate Gmail account specifically for the vespCV detector to enhance security and privacy.
 
 7. Make the script executable:
    ```bash
