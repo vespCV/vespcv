@@ -124,16 +124,10 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
 
 **Important**: Always store your email credentials securely. Avoid pushing this file to version control to protect your sensitive information. It's advisable to create a separate Gmail account specifically for the vespCV detector to enhance security and privacy.
 
-7. Make the script executable:
-   ```bash
-   chmod +x /home/vcv/start_vespcv
-   ```
+7. **Install Arducam (skip this step if you have a Camera Module 3)**
+   Follow [SOFTWARE GUIDE for IMX519 Autofocus Camera](https://docs.arducam.com/Raspberry-Pi-Camera/Native-camera/16MP-IMX519/#supported-platforms-and-os) to install and test the driver en software.
 
-     ### Important Notes:
-    - Ensure that you store your email credentials securely. Avoid pushing `.bashrc` or any files containing sensitive data to version control.
-    - An email notification is sent automatically when the first Vespa velutina is detected.
-
-8. Set up autostart with GUI:
+8. **Set up autostart with GUI (optional)**:
    ```bash
    # Open the crontab editor
    crontab -e
@@ -149,7 +143,7 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
 For the setup of the Raspberry Pi and camera module 3 check the official [documentation](https://www.raspberrypi.com/documentation/accessories/camera.html).
 
 ### Starting the Application
-1. Open a terminal window
+1. Open a terminal window (or `cd ~` to go back to your home directory)
 2. Type `./start_vespcv` and press Enter
 3. The application window will open automatically
 
@@ -160,11 +154,10 @@ For the setup of the Raspberry Pi and camera module 3 check the official [docume
 The application interface consists of the following sections:
 
 1. **Top Bar**
-   - **`START`** (Green button): Starts the hornet detection
+   - **`START`** (Green button): Re-starts the hornet detection (only needed after pressing stop to continue)
    - **`STOP`** (Orange button): Pauses the detection
    - **`MAIL`** (Gray/Blue button): Toggles email alert for Asian hornet detection
-   - **`GPIO`** (Gray/Red button): Controls external hardware like a trap or deterrent device (e.g., electric harp – placeholder functionality).
-   - **LED Indicator** (●): Shows the current status of the detection system
+   - **`GPIO`** (Gray/Red button): Controls external hardware like a trap or deterrent device (e.g., electric harp – placeholder functionality)
 
 2. **Main Screen**
    - **Left Panel**:
@@ -182,13 +175,13 @@ The application interface consists of the following sections:
    - The system will automatically scan for hornets
 
 2. **Email Alerts**
-   - Click the **MAIL** button to enable email notifications. When activated, you will receive an email with both the unannotated and annotated images upon the first detection of an Asian hornet.
-   - When enabled, you'll receive an email when the first Asian hornet is detected (requires internet connection and email configuration)
-   - The MAIL button turns blue when email alerts are active
+   - This function requires an internet connection and email configuration on the Raspberry Pi
+   - Click the **MAIL** button to enable email notifications. When activated, the button will turn blue, and you will receive an email when the first Asian hornet is detected
+   - Once the email is sent, the button will revert to gray
 
 3. **Saving Detections**
-   - When a hornet is detected, the image appears in the "Recent Detections" panel
-   - Click any detection image to save it to your desktop (requires internet connection)
+   - When a hornet is detected, the image appears in the "Gedetecteerde Aziatische hoornaars" panel
+   - Click any detection image to save it to the desktop of the Raspberry Pi
    - Images are automatically saved with date and time information in the `vespcv/data/images` folder
 
 4. **Stopping the System**
@@ -200,6 +193,10 @@ The application interface consists of the following sections:
 
 6. **Test the system**
    - For testing purposes, you can use the [insect slider](test/InsectSlider.m4v) to simulate different insect detections. Play the video on your computer monitor or smartphone in front of the camera as a mockup for real insects. This setup allows you to evaluate the system's response to various scenarios and ensures accurate hornet detection.
+
+7. **Make space on SD**
+   - The saved images, log files, and YOLO training files can be deleted all at once by removing the `data` folder.
+   - When you restart the application, these folders will be created automatically
 
 ### Tips for Best Results
 - Ensure the camera has a clear view of the area you want to monitor
@@ -226,10 +223,10 @@ If you've never used a Raspberry Pi before, check out these beginner-friendly gu
 The system can be customized through the `config.yaml` file. Here are the main settings you can adjust:
 
 ### Detection Settings
-- **Confidence Threshold** (default: 0.70)
+- **Confidence Threshold** (default: 0.80)
   - Higher values (closer to 1.0) mean more certain detections
   - Lower values might catch more hornets but could include false positives
-  - Recommended range: 0.60 - 0.80
+  - Recommended range: 0.80-0.90
 
 ### Camera Settings
 - **Lens Position** (default: 1)
@@ -249,12 +246,12 @@ The system can be customized through the `config.yaml` file. Here are the main s
   - Affects how the detection history is displayed
   - Recommended range: 10-30 minutes
 
-### LED Settings
-- **LED Pin** (default: 21)
-  - GPIO pin number for the status LED
-  - Only change if you've connected the LED to a different pin
+### GPIO/LED Settings
+- **GPIO/LED Pin** (default: 21)
+  - GPIO pin number for the LED or hardware connected to the Raspberry
+  - Only change if you've connected the LED/hardware to a different pin
 
-- **LED Duration** (default: 3 seconds)
+- **GPIO/LED Duration** (default: 3 seconds)
   - How long the LED stays on after a detection
   - Adjust based on your visibility needs
 
@@ -263,28 +260,26 @@ The system can be customized through the `config.yaml` file. Here are the main s
 If you encounter any issues, follow these steps:
 
 1. **General Checks**:
-   - Check that the camera is properly connected.
-   - Ensure the system has a stable internet connection for email alerts.
-   - If you have problems, check the log files in the `data/logs/` folder for more details.
+   - Check that the camera is properly connected
+   - Ensure the system has a stable internet connection for email alerts
+   - If you have problems, check the log files in the `data/logs/` folder for more details
 
 ### Camera Issues
 - **Camera not detected**: 
-  - Ensure the camera is properly connected.
-  - Run `sudo raspi-config` and enable the camera interface.
-  - Reboot the Raspberry Pi.
-
-- **Camera permission errors**:
-  - Add your user to the video group:
+  - Ensure the camera is properly connected
+  - Run `sudo raspi-config` and enable the camera interface
+  - Check the camera function with
     ```bash
-    sudo usermod -a -G video $USER
+    libcamera-still -t 5000 # if you have a screen
+    libcamera-jpeg -o test.jpg # check if a jpg is created
     ```
-  - Log out and log back in for changes to take effect.
+  - Reboot the Raspberry Pi.
 
 ### Model Detection Issues
 - **Low detection accuracy**:
   - Check if the camera is properly focused.
   - Ensure adequate lighting.
-  - Adjust confidence thresholds in the code if needed.
+  - Adjust confidence thresholds in the `config.yaml` if needed.
 
 - **Model loading errors**:
   - Verify the model file (`best.pt`) is in the correct directory.
@@ -298,7 +293,7 @@ If you encounter any issues, follow these steps:
     ```bash
     sudo systemctl status ssh
     ```
-  - Verify the IP address hasn't changed.
+  - Verify that the IP address has not changed by using an IP scanner application
 
 ### GPIO Issues
 - **GPIO Test Script for Connected Hardware**:
