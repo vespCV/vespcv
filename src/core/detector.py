@@ -216,10 +216,13 @@ class DetectionController:
             # Wait for thread to finish with timeout
             if self._thread and self._thread.is_alive():
                 logger.info("Waiting for detection thread to finish...")
-                self._thread.join(timeout=1.0)  # Wait up to 1 seconds
+                self._thread.join(timeout=2.0)  # Increased timeout to 2 seconds
                 
                 if self._thread.is_alive():
                     logger.warning("Detection thread did not stop gracefully")
+            
+            # Add a small delay to ensure camera operations complete
+            time.sleep(0.5)
             
             logger.info("Detector shutdown complete")
         except Exception as e:

@@ -94,7 +94,7 @@ class vespcvGUI(tk.Tk):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.title("Aziatisch-/Geelpotige Hoornaar Detector")
+        self.title("Vespa Computer Vision")
         self.geometry("1024x768")
         self.configure(bg="#FFF8E1") # Light amber background
 
@@ -347,6 +347,8 @@ class vespcvGUI(tk.Tk):
         if self.is_detecting:
             self.is_detecting = False
             self.detector.stop()
+            # Add a small delay to allow camera operations to complete
+            time.sleep(0.5)
             self.logger.info("Detection stopped")
 
     def handle_detection_result(self, result):
