@@ -23,11 +23,6 @@ class_names: ['amel', 'vcra', 'vespsp', 'vvel', 'vzon']
 
 # Camera settings
 
-# Camera type
-# Default is "camera module 3"
-# Change it to "arducam" if you are using Arducam 16MP IMX519 camera
-camera: "arducam"  
-
 # Lens position settings
 # 10: Close-up approximately 10 cm
 # 1: Medium distance, approximately 1 meter
