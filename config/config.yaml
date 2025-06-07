@@ -31,9 +31,9 @@ chart_interval: 15
 led:
   pin: 21          # GPIO pin number for the LED
   on_duration: 3   # LED activation duration after detection (in seconds)
-  enabled: true   # Whether GPIO control is enabled by default
+  enabled: false   # Whether GPIO control is enabled by default
 
-# Control Configuration
+# Mail Alert Configuration
 # -------------------
 # Enable/disable features by default
-mail_alert_enabled: true  # Whether mail alerts are enabled by default
+mail_alert_enabled: false  # Whether mail alerts are enabled by default

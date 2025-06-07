@@ -121,6 +121,8 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
       chmod 600 ~/.vespcv_credentials
       ```
     - This command restricts access so that only the file owner can read and write it.
+    - **Adjust Config**:
+      - To enable the mail function by default, set `mail_alert_enabled` to `true` in the configuration file.
 
 **Important**: Always store your email credentials securely. Avoid pushing this file to version control to protect your sensitive information. It's advisable to create a separate Gmail account specifically for the vespCV detector to enhance security and privacy.
 
@@ -246,14 +248,17 @@ The system can be customized through the `config.yaml` file. Here are the main s
   - Affects how the detection history is displayed
   - Recommended range: 10-30 minutes
 
-### GPIO/LED Settings
-- **GPIO/LED Pin** (default: 21)
+### GPIO Settings
+- **GPIO Pin** (default: 21)
   - GPIO pin number for the LED or hardware connected to the Raspberry
   - Only change if you've connected the LED/hardware to a different pin
 
-- **GPIO/LED Duration** (default: 3 seconds)
-  - How long the LED stays on after a detection
+- **GPIO Duration** (default: 3 seconds)
+  - How long the LED stays on after a detection of a Vespa velutina
   - Adjust based on your visibility needs
+
+- **GPIO Enables** (default: false)
+   - If the GPIO pin is activated after detection of a Vespa velutina
 
 ### Troubleshooting
 
