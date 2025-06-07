@@ -53,7 +53,7 @@ def get_disk_usage():
         return None
 
 def log_system_stats():
-    """Log system statistics (temperature and disk usage) every 15 minutes."""
+    """Log system statistics (temperature and disk usage) every 5 minutes."""
     with open('data/logs/system_stats.log', 'a') as stats_file:
         while True:
             # Get temperature
@@ -88,7 +88,7 @@ def log_system_stats():
                 logger.info("Disk Usage: %.2f GB used, %.2f GB free (%.1f%%)", 
                           disk_usage['used_gb'], disk_usage['free_gb'], disk_usage['used_percent'])
             
-            time.sleep(900)  # Sleep for 15 minutes
+            time.sleep(300)  # Sleep for 5 minutes
 
 def start_temperature_logging():
     """Start the system statistics logging in a separate thread."""
@@ -98,13 +98,13 @@ def start_temperature_logging():
             stats_file.write("timestamp,temperature_c,disk_used_gb,disk_free_gb,disk_used_percent\n")
     
     stats_thread = threading.Thread(target=log_system_stats)
-    stats_thread.daemon = True  # Daemonize thread
+    stats_thread.daemon = True  
     stats_thread.start()
 
 def main():
     """Main function to start temperature logging."""
-    configure_logger('data/logs/system.log')  # Set your log file path
-    start_temperature_logging()  # Start logging in a separate thread
+    configure_logger('data/logs/system.log') 
+    start_temperature_logging()  
     try:
         while True:
             time.sleep(1)  # Keep the main thread alive
@@ -112,4 +112,4 @@ def main():
         print("System statistics logging stopped.")
 
 if __name__ == "__main__":
-    main()  # Call the main function
+    main() 
