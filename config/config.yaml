@@ -1,52 +1,45 @@
-# Location of files and folders
+# VespaCV Configuration File
+# ========================
 
-# Model weights
+# File System Configuration
+# ------------------------
 model_path: "models/yolo112025-04-23default_e200_p20_b-1_augment/weights/best.pt"
-
-# Images folder
 images_folder: "/home/vcv/vespcv/data/images"
-
-# Log file location
 log_file_path: 'data/logs/detector.log'
 
-
-# Detection settings
-
-# Confidence threshold for detection
-# A higher threshold means the model is more confident about the detection
-# Default is 0.80
+# Detection Configuration
+# ----------------------
+# Confidence threshold (0.0 - 1.0)
+# Higher values require stronger confidence for detections
 conf_threshold: 0.80
 
-# Class names for detection
+# Target species for detection
 class_names: ['amel', 'vcra', 'vespsp', 'vvel', 'vzon']
 
-
-# Camera settings
-
-# Lens position settings
-# 10: Close-up approximately 10 cm
-# 1: Medium distance, approximately 1 meter
-# 0: Far distance, approximately 3 meters
-# Test lens position with:
-# libcamera-still -t 0 --autofocus-mode continuous --info-text "%lp"
+# Camera Configuration
+# ------------------
+# Lens position presets:
+#   10: Close-up (≈10 cm)
+#   1:  Medium distance (≈1 meter)
+#   0:  Far distance (≈3 meters)
+# To test lens position: libcamera-still -t 0 --autofocus-mode continuous --info-text "%lp"
 lensposition: 1
 
-# Autofocus settings
-autofocus: true  # Enable or disable autofocus
-autofocus_mode: "continuous"  # Options: "continuous", "single", etc.
+# Autofocus configuration
+autofocus: true
+autofocus_mode: "continuous"  # Options: "continuous", "single"
 
-
-# Capture settings
-# Interval in seconds between captures
+# Timing Configuration
+# ------------------
+# Time between consecutive image captures (in seconds)
 capture_interval: 15
 
-# Chart interval in minutes for grouping detections
-chart_interval: 15
+# Time window for grouping detections in charts (in minutes)
+chart_interval: 5
 
-
-# GPIO settings
-
-# LED Configuration
+# Hardware Configuration
+# --------------------
+# LED control settings
 led:
-  pin: 21  # GPIO pin number for the LED
-  on_duration: 3  # Duration in seconds that the LED stays on after detection
+  pin: 21          # GPIO pin number for the LED
+  on_duration: 3   # LED activation duration after detection (in seconds)
