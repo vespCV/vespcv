@@ -12,7 +12,7 @@ from ultralytics import YOLO
 
 from src.utils.detection_utils import capture_image, save_annotated_image, save_original_image, save_archived_image
 from src.core.logger import logger
-from src.utils.led_controller import LEDController
+from src.utils.gpio_controller import GPIOController
 
 class DetectionController:
     def __init__(self, result_callback, led_controller=None):
@@ -32,7 +32,7 @@ class DetectionController:
         self.model = self._create_model()
         
         # Initialize LED controller
-        self.led_controller = led_controller if led_controller is not None else LEDController()
+        self.led_controller = led_controller if led_controller is not None else GPIOController()
 
     def _load_config(self):
         """Load the configuration."""

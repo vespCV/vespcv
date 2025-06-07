@@ -20,7 +20,7 @@ from tkinter import scrolledtext  # Import scrolledtext for a text area with a s
 
 # Local application/library imports
 from src.core.detector import DetectionController
-from src.utils.led_controller import LEDController
+from src.utils.gpio_controller import GPIOController
 from src.utils.mail_utils import send_warning_email  # Import only the email function
 from src.utils.image_utils import ImageHandler, create_placeholder_image, create_thumbnail
 
@@ -112,7 +112,7 @@ class vespcvGUI(tk.Tk):
         style.configure('Yellow.TButton', background='yellow', foreground='black')
 
         # Initialize LED controller in simulation mode
-        self.led_controller = LEDController(simulation_mode=False)
+        self.led_controller = GPIOController()
         self.led_controller.set_enabled(False)  # Disable LED control by default for safety
         
         # Initialize a flag to track if the email has been sent
