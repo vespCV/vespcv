@@ -1,8 +1,9 @@
 import logging
-import time
-import threading
 import os
 import shutil
+import threading
+import time
+from datetime import datetime
 
 # Configure logging (initial setup without handlers)
 logger = logging.getLogger(__name__)
@@ -63,7 +64,8 @@ def log_system_stats():
             
             # Prepare log entry
             timestamp = time.time()
-            log_entry = f"{timestamp},"
+            readable_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')  # Convert to readable format
+            log_entry = f"{readable_time},"  # Use the readable timestamp
             
             if temperature is not None:
                 log_entry += f"{temperature:.2f},"
