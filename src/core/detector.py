@@ -181,13 +181,15 @@ class DetectionController:
                     max_conf = conf
                     max_conf_class = class_id
 
-                # Draw bounding box
-                cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 10)
-                
-                # Add label
-                label = f"{class_name} {conf:.2f}"
-                cv2.putText(img, label, (int(x1), int(y1) - 10),
-                           cv2.FONT_HERSHEY_SIMPLEX, 15.0, (0, 255, 0), 15)
+                # Only draw bounding box and label if confidence is 0.6 or higher
+                if conf >= 0.6:
+                    # Draw bounding box
+                    cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 10)
+                    
+                    # Add label
+                    label = f"{class_name} {conf:.2f}"
+                    cv2.putText(img, label, (int(x1), int(y1) - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 15.0, (0, 255, 0), 15)
 
         if class_3_detected:
             final_class = "vvel"
