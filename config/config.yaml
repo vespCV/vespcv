@@ -23,11 +23,10 @@ class_names: ['amel', 'vcra', 'vespsp', 'vvel', 'vzon']
 #   1:  Medium distance (≈1 meter)
 #   0:  Far distance (≈3 meters)
 # To test lens position: libcamera-still -t 0 --autofocus-mode continuous --info-text "%lp"
-lensposition: 1
+lensposition: 10
 
 # Autofocus configuration
 autofocus: true
-autofocus_mode: "continuous"  # Options: "continuous", "single"
 
 # Timing Configuration
 # ------------------
@@ -35,11 +34,11 @@ autofocus_mode: "continuous"  # Options: "continuous", "single"
 capture_interval: 15
 
 # Time window for grouping detections in charts (in minutes)
-chart_interval: 5
+chart_interval: 15
 
 # Hardware Configuration
 # --------------------
-# LED control settings
+# GPIO control settings
 led:
   pin: 21          # GPIO pin number for the LED
   on_duration: 3   # LED activation duration after detection (in seconds)
