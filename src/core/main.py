@@ -1,8 +1,15 @@
-from src.core.logger import configure_logger, start_temperature_logging, logger
+import os
+
 from src.core.config_loader import load_config
 from src.core.detector import DetectionController
+from src.core.logger import configure_logger, start_temperature_logging, logger
 from src.gui.app import vespcvGUI
-import os
+
+def create_directories(required_dirs):
+    """Create necessary directories if they do not exist."""
+    for dir_path in required_dirs:
+        os.makedirs(dir_path, exist_ok=True)  # Create directory if it doesn't exist
+        print(f"Created directory: {dir_path}")  # Log the creation of the directory
 
 def initialize_application():
     """Initialize all core components of the application."""
@@ -17,9 +24,7 @@ def initialize_application():
             'data/yolo_jpg_txt'                       # Create yolo directory
         ]
         
-        for dir_path in required_dirs:
-            os.makedirs(dir_path, exist_ok=True)
-            print(f"Created directory: {dir_path}")  # Use print instead of logger since logger isn't configured yet
+        create_directories(required_dirs)
         
         # Now that directories exist, configure logging
         configure_logger(config['log_file_path'])
