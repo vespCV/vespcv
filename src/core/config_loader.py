@@ -35,7 +35,6 @@ def load_config(config_path='config/config.yaml') -> dict:
         'log_file_path',
         'conf_threshold',
         'class_names',
-        'lensposition',
         'capture_interval'
     ]
 
@@ -50,10 +49,7 @@ def load_config(config_path='config/config.yaml') -> dict:
         logging.error("Error: 'conf_threshold' must be a number between 0 and 1")
         raise ValueError("Error: 'conf_threshold' must be a number between 0 and 1")
     
-    if not isinstance(config['lensposition'], (int, float)) or not 0 <= config['lensposition'] <= 10:
-        logging.error("Error: 'lensposition' must be a number between 0.0 and 10.0")
-        raise ValueError("Error: 'lensposition' must be a number between 0.0 and 10.0")
-    
+ 
     if not isinstance(config['capture_interval'], (int, float)) or config['capture_interval'] <= 0:
         logging.error("Error: 'capture_interval' must be a positive number")
         raise ValueError("Error: 'capture_interval' must be a positive number")

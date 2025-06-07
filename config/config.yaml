@@ -16,17 +16,6 @@ conf_threshold: 0.80
 # Target species for detection
 class_names: ['amel', 'vcra', 'vespsp', 'vvel', 'vzon']
 
-# Camera Configuration
-# ------------------
-# Lens position presets:
-#   10: Close-up (≈10 cm)
-#   1:  Medium distance (≈1 meter)
-#   0:  Far distance (≈3 meters)
-# To test lens position: libcamera-still -t 0 --autofocus-mode continuous --info-text "%lp"
-lensposition: 10
-
-# Autofocus configuration
-autofocus: true
 
 # Timing Configuration
 # ------------------
