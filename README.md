@@ -1,7 +1,7 @@
 # vespCV - Asian Hornet Detection System
 
 ## Overview
-The vespCV project aims to develop an automated detection system for the invasive Asian hornet (Vespa velutina). This system leverages computer vision technology to provide beekeepers and researchers with a reliable tool for monitoring and controlling hornet populations.
+The vespCV project is dedicated to creating an automated detection system for the invasive Asian hornet (Vespa velutina). This system utilizes computer vision technology to equip beekeepers, volunteers reporting hornet sightings to 'waarnemingen.nl', and researchers with a dependable tool for monitoring and managing hornet populations effectively.
 
 ## Table of Contents
 - [Introduction](#introduction)
