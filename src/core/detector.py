@@ -73,6 +73,8 @@ class DetectionController:
 
     def _detection_loop(self):
         """Main detection loop."""
+        last_detection_time = 0
+        
         while not self._stop_event.is_set():
             if self._pause_event.is_set():
                 if self._stop_event.wait(0.1):
@@ -80,18 +82,34 @@ class DetectionController:
                 continue
 
             try:
-                # Capture and process image
-                result = self._process_single_frame()
-                if result:
-                    self.result_callback(result)
+                current_time = time.time()
+                time_since_last = current_time - last_detection_time
+                
+                # Subtract x seconds from the configured capture interval
+                adjusted_capture_interval = self.config['capture_interval'] - 3 # seconds to compensate for the time it takes to process the image    
+
+                
+                # Only proceed if enough time has passed since last detection
+                if time_since_last >= adjusted_capture_interval:
+                    # Capture and process image
+                    result = self._process_single_frame()
+                    if result:
+                        self.result_callback(result)
+                        last_detection_time = current_time
                     
-                # Check if LED needs to be turned off
-                self.led_controller.check_and_turn_off()
+                    # Check if LED needs to be turned off
+                    self.led_controller.check_and_turn_off()
+                else:
+                    # Sleep for a short time to prevent busy waiting
+                    time.sleep(0.1)
                 
             except Exception as e:
                 logger.error("Error in detection loop: %s", e)
+                # Sleep briefly on error to prevent tight error loops
+                time.sleep(1)
 
-            if self._stop_event.wait(self.config['capture_interval']):
+            # Check for stop event
+            if self._stop_event.wait(0.1):
                 break
 
     def _process_single_frame(self):
