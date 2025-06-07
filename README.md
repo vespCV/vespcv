@@ -134,7 +134,7 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
    # Open the crontab editor
    crontab -e
    ```
-   Add this line to start the application at boot:
+   Choose option 1 and add this line to start the application at boot:
    ```bash
    @reboot sleep 30 && /home/vcv/start_vespcv >> /home/vcv/vespcv/data/logs/startup.log 2>&1
    ```
