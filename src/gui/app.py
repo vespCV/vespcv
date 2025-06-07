@@ -111,9 +111,9 @@ class vespcvGUI(tk.Tk):
         style.configure('Blue.TButton', background='blue', foreground='white')  # Add blue style
         style.configure('Yellow.TButton', background='yellow', foreground='black')
 
-        # Initialize LED controller in simulation mode
+        # Initialize LED controller with config setting
         self.led_controller = GPIOController()
-        self.led_controller.set_enabled(False)  # Disable LED control by default for safety
+        self.led_controller.set_enabled(self.config.get('led', {}).get('enabled', False))
         
         # Initialize a flag to track if the email has been sent
         self.email_sent = False
@@ -130,8 +130,17 @@ class vespcvGUI(tk.Tk):
         # Add a new attribute to store the latest image path
         self.latest_image_path = None
         
-        # Ensure LED button starts in disabled state
-        self.led_button.configure(style='LED.TButton')  # Start with gray (disabled) button
+        # Set initial LED button state based on config
+        if self.led_controller.enabled:
+            self.led_button.configure(style='Red.TButton')
+        else:
+            self.led_button.configure(style='LED.TButton')
+
+        # Set initial mail button state based on config
+        if self.config.get('mail_alert_enabled', False):
+            self.mail_button.configure(style='Blue.TButton')
+        else:
+            self.mail_button.configure(style='LED.TButton')
 
         # Start LED status update and timer
         self._update_led_status()
