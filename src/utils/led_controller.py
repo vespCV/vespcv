@@ -4,8 +4,7 @@ LED Controller module for managing LED operations in the vespCV application.
 import time
 import logging
 from threading import Lock
-#old
-import time
+
 from src.core.logger import logger
 from src.core.config_loader import load_config
 
@@ -32,7 +31,7 @@ class LEDController:
         self.on_duration = self.config['led']['on_duration']
         self.last_detection_time = 0
         self.simulation_mode = simulation_mode or not GPIO_AVAILABLE
-        self.is_on = False
+        self._is_on = False
         self.enabled = False  # Only allow GPIO activation if enabled is True
         self._lock = Lock()
         self._last_on_time = 0
@@ -99,7 +98,6 @@ class LEDController:
     def check_and_turn_off(self):
         """Check if LED should be turned off based on duration."""
         if self._is_on and time.time() - self._last_on_time >= self.on_duration:
-            logger.debug(f"LED duration of {self.on_duration} seconds reached, turning off")
             self.turn_off()
                 
     def handle_detection(self):
