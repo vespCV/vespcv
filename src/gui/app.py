@@ -16,12 +16,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PIL import Image, ImageTk, ImageDraw, ImageFont
 import tkinter as tk
 from tkinter import ttk
-from tkinter import scrolledtext  # Import scrolledtext for a text area with a scrollbar
+from tkinter import scrolledtext
 
 # Local application/library imports
 from src.core.detector import DetectionController
 from src.utils.gpio_controller import GPIOController
-from src.utils.mail_utils import send_warning_email  # Import only the email function
+from src.utils.mail_utils import prepare_and_send_detection_email  # Update import
 from src.utils.image_utils import ImageHandler, create_placeholder_image, create_thumbnail
 
 class ImageHandler:
@@ -403,16 +403,13 @@ class vespcvGUI(tk.Tk):
                 not self.email_sent and 
                 self.mail_button.cget('style') == 'Blue.TButton'):
                 try:
-                    # Prepare email details
-                    subject = "Vespa velutina detected"
-                    body = f"Dear vespCV user,\n\nA Vespa velutina has been detected on {timestamp} with confidence {confidence}.\n\nBest regards,\nvespCV System"
-                    
-                    # Get the paths of the images
-                    annotated_image_path = annotated_path
-                    non_annotated_image_path = os.path.join(self.config['images_folder'], 'image_for_detection.jpg')
-                    
-                    # Send the email
-                    if send_warning_email(subject, body, annotated_image_path, non_annotated_image_path):
+                    # Send email using the new function
+                    if prepare_and_send_detection_email(
+                        timestamp,
+                        confidence,
+                        annotated_path,
+                        os.path.join(self.config['images_folder'], 'image_for_detection.jpg')
+                    ):
                         # Only update button state and flag if email was sent successfully
                         self.mail_button.configure(style='LED.TButton')  # Change back to gray
                         self.email_sent = True

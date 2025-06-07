@@ -54,3 +54,27 @@ def send_warning_email(subject, body, annotated_image_path, non_annotated_image_
     except Exception as e:
         logger.error(f"Failed to send warning email: {e}")
         return False
+
+def prepare_and_send_detection_email(timestamp, confidence, annotated_image_path, non_annotated_image_path):
+    """Prepare and send a detection email with the given details.
+    
+    Args:
+        timestamp: Detection timestamp
+        confidence: Detection confidence score
+        annotated_image_path: Path to the annotated image
+        non_annotated_image_path: Path to the non-annotated image
+        
+    Returns:
+        bool: True if email was sent successfully, False otherwise
+    """
+    try:
+        # Prepare email details
+        subject = "Vespa velutina detected"
+        body = f"Dear vespCV user,\n\nA Vespa velutina has been detected on {timestamp} with confidence {confidence}.\n\nBest regards,\nvespCV System"
+        
+        # Send the email using the existing send_warning_email function
+        return send_warning_email(subject, body, annotated_image_path, non_annotated_image_path)
+        
+    except Exception as e:
+        logger.error(f"Failed to prepare and send detection email: {e}")
+        return False
