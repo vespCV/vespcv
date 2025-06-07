@@ -69,9 +69,8 @@ def prepare_and_send_detection_email(timestamp, confidence, annotated_image_path
     """
     try:
         # Prepare email details
-        subject = "Vespa velutina detected"
-        body = f"Dear vespCV user,\n\nA Vespa velutina has been detected on {timestamp} with confidence {confidence}.\n\nBest regards,\nvespCV System"
-        
+        subject = "Aziatische hoornaar waargenomen"
+        body = f"Geachte vespCV gebruiker,\n\nEr is een Vespa velutina gedetecteerd op {timestamp} met een zekerheid van {confidence} (0-1). U kunt uw waarneming, samen met de bijgevoegde foto, hier melden: https://waarneming.nl/go/vespa-velutina/.\n\nMet vriendelijke groet,\nHet vespCV Detector Team"
         # Send the email using the existing send_warning_email function
         return send_warning_email(subject, body, annotated_image_path, non_annotated_image_path)
         
