@@ -47,7 +47,7 @@ The Asian hornet threatens honeybees and can possibly disrupt local ecosystems. 
        - Configure other options according to your Wi-Fi and time zone settings.
    - Detailed information can be found [here](https://www.raspberrypi.com/documentation/computers/getting-started.html).
    - Connect a keyboard and monitor to the Raspberry Pi, or alternatively, or use [Raspberry Pi Connect](https://www.raspberrypi.com/documentation/services/connect.html) for remote access.
-      Quick reference:
+      Quick reference for using Raspberry Pi Connect:
       ```bash
       sudo apt install rpi-connect
       rpi-connect on
