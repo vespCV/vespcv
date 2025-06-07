@@ -220,12 +220,12 @@ class vespcvGUI(tk.Tk):
         # This method will contain Saved Detections and Logs
 
         # Saved Detections section (takes up the top part of the right panel)
-        self.saved_detections_frame = ttk.LabelFrame(parent_frame, text="Gedetecteerde Aziatische Hoornaars (Klik voor download naar desktop.)")
+        self.saved_detections_frame = ttk.LabelFrame(parent_frame, text="Gedetecteerde Aziatische Hoornaars (Klik voor download naar desktop)")
         self.saved_detections_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5, pady=5)
         self.create_saved_detections_section(self.saved_detections_frame)
 
         # System Logs section (takes up the bottom part of the right panel)
-        log_frame = ttk.LabelFrame(parent_frame, text="Detectie log")
+        log_frame = ttk.LabelFrame(parent_frame, text="Detector log")
         log_frame.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH, padx=5, pady=5) # Logs will take up the bottom part
 
         # Add placeholder method for the log display within the log_frame
