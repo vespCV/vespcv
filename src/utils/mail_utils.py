@@ -3,12 +3,15 @@ Email utility functions for sending warning emails.
 """
 
 import os
+import datetime
 import smtplib
+
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 from src.core.logger import logger
 from src.utils.credentials import get_email_credentials
+
 
 def send_warning_email(subject, body, annotated_image_path, non_annotated_image_path):
     """Send a warning email with detection images.
@@ -68,9 +71,13 @@ def prepare_and_send_detection_email(timestamp, confidence, annotated_image_path
         bool: True if email was sent successfully, False otherwise
     """
     try:
+        # Format the timestamp
+        formatted_timestamp = datetime.datetime.fromisoformat(timestamp).strftime('%d-%m-%Y %H:%M')
+        
         # Prepare email details
         subject = "Aziatische hoornaar waargenomen"
-        body = f"Geachte vespCV gebruiker,\n\nEr is een Vespa velutina gedetecteerd op {timestamp} met een zekerheid van {confidence} (0-1). U kunt uw waarneming, samen met de bijgevoegde foto, hier melden: https://waarneming.nl/go/vespa-velutina/.\n\nMet vriendelijke groet,\nHet vespCV Detector Team"
+        body = f"Geachte vespCV gebruiker,\n\nEr is een Vespa velutina gedetecteerd op {formatted_timestamp}. U kunt uw waarneming, samen met de bijgevoegde foto en plaats, hier melden:(https://waarneming.nl/go/vespa-velutina/).\n\nMet vriendelijke groet,\nHet vespCV Detector Team"
+        
         # Send the email using the existing send_warning_email function
         return send_warning_email(subject, body, annotated_image_path, non_annotated_image_path)
         
