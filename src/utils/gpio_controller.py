@@ -8,15 +8,6 @@ from threading import Lock
 from src.core.logger import logger
 from src.core.config_loader import load_config
 
-# Try to import RPi.GPIO, if not available, set to None
-try:
-    import RPi.GPIO as GPIO
-    GPIO_AVAILABLE = True
-except ImportError:
-    GPIO = None
-    GPIO_AVAILABLE = False
-    logger.warning("RPi.GPIO module not available. Running in simulation mode only.")
-
 logger = logging.getLogger(__name__)
 
 class GPIOController:
