@@ -296,7 +296,8 @@ If you encounter any issues, follow these steps:
   - Verify the model file (`best.pt`) is in the correct directory.
   - Check if the model file is not corrupted.
   - Ensure sufficient RAM is available (at least 4GB recommended).
-
+  
+  
 ### Network Issues
 - **SSH connection problems**:
   - Verify the Raspberry Pi is on the same network.
@@ -304,7 +305,14 @@ If you encounter any issues, follow these steps:
     ```bash
     sudo systemctl status ssh
     ```
-  - Verify that the IP address has not changed by using an IP scanner application
+  - Verify that the IP address has not changed by using the command `hostname -I` or by running `ifconfig`.
+
+### Raspberry Pi Connect Issues
+- **Raspberry Pi does not reconnect after a prolonged period of inactivity with Raspberry Pi Connect**
+   - Check the Raspberry Pi's IP address using the command `hostname -I` or by running `ifconfig`.
+   - Verify its connection to Wi-Fi by using the command: `ping <IP-address>`.
+   - SSH into the Raspberry Pi using: `ssh pi@<IP-address>`.
+   - Then execute the following commands to reset the connection:
 
 ### GPIO Issues
 - **GPIO Test Script for Connected Hardware**:
