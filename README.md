@@ -14,7 +14,7 @@ The vespCV project is dedicated to creating an automated detection system for th
 - [Additional Resources](#additional-resources)
 
 ## Introduction
-In recent years, the invasive Asian hornet (Vespa velutina) has posed a significant threat to honeybee populations and, consequently, to our ecosystems and agriculture. Background information on the problems and solutions related to this invasive exotic species can be found in the [wiki](https://github.com/vespCV/vespcv.wiki.git). The `vespCV` project aims to develop an open-source non-profit automated detection system that empowers beekeepers, volunteers, and researchers to combat this growing challenge effectively.
+In recent years, the invasive Asian hornet (Vespa velutina) has posed a significant threat to honeybee populations and, consequently, to our ecosystems and agriculture. Background information on the problems and solutions related to this invasive exotic species can be found in the [wiki](https://github.com/vespCV/vespcv/wiki). The `vespCV` project aims to develop an open-source non-profit automated detection system that empowers beekeepers, volunteers, and researchers to combat this growing challenge effectively.
 
 ### Problem Statement
 The Asian hornet primarily preys on honeybees, which can lead to a decline in pollination performance, negatively impacting biodiversity and fruit cultivation. A single colony requires more than 11 kg of insect biomass annually. While honeybees are the most frequently predated species, wild pollinators and decomposers are also on their menu, along with nectar, which makes the Asian hornet also a nectar competitor.
