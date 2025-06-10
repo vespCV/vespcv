@@ -327,13 +327,17 @@ If you encounter any issues, follow these steps:
 This project is licensed under the GPL Version 3. See the [LICENSE](LICENSE) file for details.
 
 ## Additional Resources
-- [Raspberry Pi Documentation](https://www.raspberrypi.org/documentation/): Official documentation for Raspberry Pi.
-- [YOLOv11 Documentation](https://docs.ultralytics.com/): Documentation for the YOLOv11 model.
-- [OpenCV Documentation](https://docs.opencv.org/): Documentation for OpenCV, the library used for image processing.
-- [Python Documentation](https://docs.python.org/3/): Official Python documentation for reference on Python programming.
-- [waarnemingen.nl](https://waarneming.nl/): An official platform for reporting sightings of Asian hornets, allowing users to submit images and additional information to aid in monitoring and controlling hornet populations.
-- [Arducam documentation](https://docs.arducam.com/Raspberry-Pi-Camera/Pivariety-Camera/Quick-Start-Guide/): This guide provides detailed instructions on setting up and using the Arducam camera with the Raspberry Pi, including installation steps, configuration options, and troubleshooting tips.
-- [Raspberry Camera Module 3 documentation](https://www.raspberrypi.com/documentation/accessories/camera.html): This official documentation covers the features, setup, and usage of the Raspberry Camera Module 3.
-
+### Vespa velutina (Yellow-Legged Hornet or Asian Hornet)
+A comprehensive reference list can be found in this repository's GitHub wiki, which includes:
+- Websites providing information on Asian hornets and guidance on what to do if you encounter one or discover a nest.
+- Scientific papers covering:
+  - [Invasion](https://github.com/vespCV/vespcv/wiki/invastion)
+  - [Impact](https://github.com/vespCV/vespcv/wiki/impact)
+  - [Detection](https://github.com/vespCV/vespcv/wiki/detect)
+  - [Control](https://github.com/vespCV/vespcv/wiki/control)
+### Edge Device Computer Vision
+You can also find links related to edge computer vision, including:
+- Raspberry Pi documentation
+- Ultralytics YOLO documentation
 
 
