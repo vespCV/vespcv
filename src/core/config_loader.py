@@ -19,6 +19,12 @@ def validate_value_types(config: dict) -> None:
         logging.error("Error: 'capture_interval' must be a positive number")
         raise ValueError("Error: 'capture_interval' must be a positive number")
 
+    # Validate camera_type
+    if 'camera_type' in config:
+        if config['camera_type'] not in ['pi', 'arducam']:
+            logging.error("Error: 'camera_type' must be either 'pi' or 'arducam'")
+            raise ValueError("Error: 'camera_type' must be either 'pi' or 'arducam'")
+
 def load_config(config_path='config/config.yaml') -> dict:
     """Load the configuration from the specified YAML file.
 

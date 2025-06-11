@@ -50,20 +50,39 @@ def log_detection_data(detections, image_path):
     except Exception as e:
         logger.error(f"Error logging detection data: {e}")
 
-def capture_image():
+def reset_camera():
+    """Reset the Arducam IMX519 camera by unloading and reloading the driver."""
+    try:
+        # Unload the camera driver
+        subprocess.run(['sudo', 'modprobe', '-r', 'arducam_imx519'], check=False)
+        time.sleep(1)  # Wait for driver to unload
+        
+        # Reload the camera driver
+        subprocess.run(['sudo', 'modprobe', 'arducam_imx519'], check=False)
+        time.sleep(2)  # Wait for driver to initialize
+        
+        logger.info("Camera reset completed")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to reset camera: {e}")
+        return False
+
+def capture_image(max_retries=3):
     """Capture an image using libcamera-still and save it to the configured path.
-    
+    Uses retry/reset logic only for Arducam.
+    Args:
+        max_retries (int): Maximum number of retry attempts if capture fails (Arducam only)
     Returns:
         str: Path to the captured image
-        
     Raises:
         FileNotFoundError: If the images folder doesn't exist
-        subprocess.SubprocessError: If the camera capture fails
+        subprocess.SubprocessError: If the camera capture fails after all retries
     """
     try:
         # Load configuration
         config = load_config()
         images_folder = config.get('images_folder')
+        camera_type = config.get('camera_type', 'pi')
         
         # Ensure images folder exists
         os.makedirs(images_folder, exist_ok=True)
@@ -72,23 +91,47 @@ def capture_image():
         image_path = os.path.join(images_folder, 'image_for_detection.jpg')
         logger.debug(f"Capturing image to: {image_path}")
         
-        # Capture image using libcamera-still
-        subprocess.run([
-            "libcamera-still",
-            "--nopreview",
-            "-o", image_path,
-            "--width", "4656",
-            "--height", "3496"
-        ], check=True)
-        
-        logger.debug(f"Image captured successfully: {image_path}")
-        return image_path
+        if camera_type == 'arducam':
+            retry_count = 0
+            while retry_count < max_retries:
+                try:
+                    subprocess.run([
+                        "libcamera-still",
+                        "--nopreview",
+                        "-o", image_path,
+                        "--width", "4656",
+                        "--height", "3496"
+                    ], check=True)
+                    logger.debug(f"Image captured successfully: {image_path}")
+                    return image_path
+                except subprocess.SubprocessError as e:
+                    retry_count += 1
+                    logger.warning(f"Capture attempt {retry_count} failed: {e}")
+                    if retry_count < max_retries:
+                        logger.info("Attempting to reset camera...")
+                        if reset_camera():
+                            time.sleep(2)  # Wait for camera to stabilize
+                            continue
+                        else:
+                            logger.error("Failed to reset camera")
+                            break
+                    else:
+                        logger.error(f"Failed to capture image after {max_retries} attempts")
+                        raise
+        else:  # camera_type == 'pi' or unknown
+            # Standard single-attempt logic for Pi Camera Module 3
+            subprocess.run([
+                "libcamera-still",
+                "--nopreview",
+                "-o", image_path,
+                "--width", "4656",
+                "--height", "3496"
+            ], check=True)
+            logger.debug(f"Image captured successfully: {image_path}")
+            return image_path
         
     except FileNotFoundError as e:
         logger.error(f"Images folder not found: {e}")
-        raise
-    except subprocess.SubprocessError as e:
-        logger.error(f"Failed to capture image: {e}")
         raise
     except Exception as e:
         logger.error(f"Unexpected error during image capture: {e}")

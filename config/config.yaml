@@ -27,6 +27,8 @@ chart_interval: 15
 
 # Hardware Configuration
 # --------------------
+# Camera type: 'pi' for Camera Module 3 (default), 'arducam' for Arducam IMX519
+camera_type: pi
 # GPIO control settings
 led:
   pin: 21          # GPIO pin number for the LED
@@ -37,3 +39,8 @@ led:
 # -------------------
 # Enable/disable features by default
 mail_alert_enabled: false  # Whether mail alerts are enabled by default
+
+# Camera Type
+# Default is Camera Module 3 (pi)
+# Arducam IMX519 is supported (arducam)
+camera_type: arducam
