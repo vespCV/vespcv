@@ -28,7 +28,16 @@ chart_interval: 15
 # Hardware Configuration
 # --------------------
 # Camera type: 'pi' for Camera Module 3 (default), 'arducam' for Arducam IMX519
-camera_type: pi
+camera_type: arducam  # Changed to pi camera as default
+
+# Camera settings
+camera:
+  width: 1920
+  height: 1440
+  framerate: 30
+  autofocus_mode: continuous
+  timeout: 5000
+
 # GPIO control settings
 led:
   pin: 21          # GPIO pin number for the LED
