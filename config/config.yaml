@@ -35,8 +35,16 @@ camera:
   width: 1920
   height: 1440
   framerate: 30
-  autofocus_mode: continuous
+  autofocus_mode: false  # Set to true to enable autofocus, false to disable
+  autofocus_enabled: true  # Set to true to enable autofocus, false to disable
   timeout: 5000
+  lens_position: 10  # Set lens position for focusing at 10 cm
+  # lens_position: 
+  #   - 0: Far distance (approximately 3 meters)
+  #   - 1: Medium distance (approximately 1 meter)
+  #   - 10: Close-up (approximately 10 centimeters)
+  # This setting adjusts the focus distance of the Arducam lens.
+  # Ensure the lens is set to the correct position for optimal focus.
 
 # GPIO control settings
 led:

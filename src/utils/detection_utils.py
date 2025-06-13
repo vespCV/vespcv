@@ -108,6 +108,9 @@ def capture_image(max_retries=3):
         config = load_config()
         images_folder = config.get('images_folder')
         camera_type = config.get('camera_type', 'pi')
+        autofocus_enabled = config['camera'].get('autofocus_enabled', True)  # Get autofocus setting
+        autofocus_mode = config['camera'].get('autofocus_mode', False)  # Get autofocus mode setting
+        lens_position = config['camera'].get('lens_position', 10)  # Get lens position
         
         # Ensure images folder exists
         os.makedirs(images_folder, exist_ok=True)
@@ -124,20 +127,28 @@ def capture_image(max_retries=3):
             retry_count = 0
             while retry_count < max_retries:
                 try:
-                    # Add timeout and more camera options for stability
-                    subprocess.run([
+                    # Prepare command options
+                    command = [
                         "libcamera-still",
                         "--nopreview",
                         "-o", image_path,
                         "--width", width,
                         "--height", height,
-                        "--timeout", "5000",  # 5 second timeout
-                        "--autofocus-mode", "continuous",  # Enable continuous autofocus
-                        "--framerate", "30",  # Set a stable framerate
-                        "--metering", "centre",
-                        "--gain", "4.0",
-                        "--awb", "auto"
-                    ], check=True, timeout=10)  # Add command timeout
+                        "--ev", "0.5",  # Adjust exposure compensation
+                        "--timeout", "5000"
+                    ]
+                    
+                    # Add autofocus options if enabled
+                    if autofocus_mode:  # Use autofocus if true
+                        command.extend([
+                            "--autofocus-mode", "continuous"
+                        ])
+                    else:  # Use fixed lens position
+                        command.extend([
+                            "--lens", str(lens_position)  # Focus on specified lens position
+                        ])
+                    
+                    subprocess.run(command, check=True, timeout=10)  # Add command timeout
                     
                     # Verify the image was created and is valid
                     if os.path.exists(image_path) and os.path.getsize(image_path) > 0:
