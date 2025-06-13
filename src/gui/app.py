@@ -17,12 +17,38 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont
 import tkinter as tk
 from tkinter import ttk
 from tkinter import scrolledtext
+import subprocess
 
 # Local application/library imports
 from src.core.detector import DetectionController
 from src.utils.gpio_controller import GPIOController
 from src.utils.mail_utils import prepare_and_send_detection_email  # Update import
 from src.utils.image_utils import ImageHandler, create_placeholder_image, create_thumbnail
+
+# Initialize logger
+logger = logging.getLogger(__name__)
+
+# Define the restart_services function
+def restart_services():
+    """Restart SSH and rpi-connect services."""
+    try:
+        # Restart SSH service
+        subprocess.run(['sudo', 'systemctl', 'restart', 'ssh'], check=True)
+        logger.info("SSH service restarted successfully.")
+        
+        # Restart rpi-connect service
+        subprocess.run(['rpi-connect', 'on'], check=True)
+        logger.info("rpi-connect service restarted successfully.")
+        
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to restart services: {e}")
+
+# Define the schedule_service_restart function
+def schedule_service_restart(interval_minutes=15):
+    """Schedule the service restart every specified interval."""
+    while True:
+        restart_services()
+        time.sleep(interval_minutes * 60)  # Convert minutes to seconds
 
 class ImageHandler:
     def __init__(self, logger):
@@ -798,7 +824,22 @@ class vespcvGUI(tk.Tk):
             # Force destroy the window even if there's an error
             self.destroy()
 
+def main():
+    """Main function to start the application."""
+    configure_logger('data/logs/system.log') 
+    start_temperature_logging()  
+    
+    # Start the service restart in a separate thread
+    service_restart_thread = threading.Thread(target=schedule_service_restart, args=(15,))
+    service_restart_thread.daemon = True  # Daemonize thread
+    service_restart_thread.start()
+    
+    try:
+        while True:
+            time.sleep(1)  # Keep the main thread alive
+    except KeyboardInterrupt:
+        print("System statistics logging stopped.")
+
 if __name__ == "__main__":
-    app = vespcvGUI()
-    app.mainloop()
+    main()
     

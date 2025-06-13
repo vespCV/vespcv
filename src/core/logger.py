@@ -83,6 +83,19 @@ def check_raspberry_pi_connection():
     # This function can be removed entirely
     pass  # Remove this function
 
+def check_rpi_connect_status():
+    """Check the status of the Raspberry Pi connection using rpi-connect."""
+    try:
+        result = subprocess.run(['rpi-connect', 'status'], capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout.strip()  # Return the output of the command
+        else:
+            logger.error("Failed to get rpi-connect status: %s", result.stderr.strip())
+            return "Error retrieving status"
+    except Exception as e:
+        logger.error("Exception while checking rpi-connect status: %s", e)
+        return "Error retrieving status"
+
 def log_system_stats():
     """Log system statistics (temperature, disk usage, and connections) every 5 minutes."""
     with open('data/logs/system_stats.log', 'a') as stats_file:
@@ -93,10 +106,8 @@ def log_system_stats():
             # Get disk usage
             disk_usage = get_disk_usage()
             
-            # Get connection status
+            # Get SSH status
             ssh_status = check_ssh_connection()
-            # Remove the call to check_raspberry_pi_connection
-            # rpi_status = check_raspberry_pi_connection()  # Remove this line
             
             # Prepare log entry
             timestamp = time.time()
@@ -113,18 +124,15 @@ def log_system_stats():
             else:
                 log_entry += "N/A,N/A,N/A,"
             
-            # Add connection status
+            # Add SSH status
             if ssh_status is not None:
                 log_entry += f"{ssh_status['overall_status']},"
             else:
                 log_entry += "N/A,"
                 
-            # Remove logging for Raspberry Pi connection status
-            # if rpi_status is not None:
-            #     log_entry += f"{rpi_status['overall_status']}"
-            # else:
-            #     log_entry += "N/A"
-                
+            # Do not log Raspberry Pi connection status
+            # log_entry += f"{rpi_status}"  # Remove this line
+            
             # Write to log file
             stats_file.write(log_entry + "\n")
             stats_file.flush()
@@ -137,9 +145,6 @@ def log_system_stats():
                           disk_usage['used_gb'], disk_usage['free_gb'], disk_usage['used_percent'])
             if ssh_status is not None:
                 logger.info("SSH Status: %s", "Active" if ssh_status['overall_status'] else "Inactive")
-            # Remove logging for Raspberry Pi connection status
-            # if rpi_status is not None:
-            #     logger.info("Raspberry Pi Connection: %s", "Connected" if rpi_status['overall_status'] else "Disconnected")
             
             time.sleep(300)  # Sleep for 5 minutes
 
@@ -148,7 +153,7 @@ def start_temperature_logging():
     # Create header in log file if it doesn't exist
     if not os.path.exists('data/logs/system_stats.log') or os.path.getsize('data/logs/system_stats.log') == 0:
         with open('data/logs/system_stats.log', 'w') as stats_file:
-            stats_file.write("timestamp,temperature_c,disk_used_gb,disk_free_gb,disk_used_percent,ssh_status,rpi_status\n")
+            stats_file.write("timestamp,temperature_c,disk_used_gb,disk_free_gb,disk_used_percent,ssh_status\n")
     
     stats_thread = threading.Thread(target=log_system_stats)
     stats_thread.daemon = True  
@@ -165,4 +170,44 @@ def main():
         print("System statistics logging stopped.")
 
 if __name__ == "__main__":
-    main() 
+    main()
+
+logger.info("Test log entry to check logging functionality.")
+
+def restart_services():
+    """Restart SSH and rpi-connect services and log the actions."""
+    try:
+        # Restart SSH service
+        subprocess.run(['sudo', 'systemctl', 'restart', 'ssh'], check=True)
+        logger.info("SSH service restarted successfully.")
+        
+        # Log to detector.log
+        with open('data/logs/detector.log', 'a') as log_file:
+            log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - INFO - SSH service restarted successfully.\n")
+        
+        # Check SSH status after restart
+        ssh_status = subprocess.run(['systemctl', 'is-active', 'ssh'], capture_output=True, text=True)
+        if ssh_status.stdout.strip() == 'active':
+            log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - INFO - SSH service is active after restart.\n")
+        else:
+            log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - WARNING - SSH service is not active after restart.\n")
+        
+        # Restart rpi-connect service
+        subprocess.run(['rpi-connect', 'on'], check=True)
+        logger.info("rpi-connect service restarted successfully.")
+        
+        # Log to detector.log
+        with open('data/logs/detector.log', 'a') as log_file:
+            log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - INFO - rpi-connect service restarted successfully.\n")
+        
+        # Check rpi-connect status after restart
+        rpi_status = subprocess.run(['rpi-connect', 'status'], capture_output=True, text=True)
+        if rpi_status.returncode == 0:
+            log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - INFO - rpi-connect service is active after restart: {rpi_status.stdout.strip()}\n")
+        else:
+            log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - WARNING - rpi-connect service is not active after restart: {rpi_status.stderr.strip()}\n")
+        
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to restart services: {e}")
+        with open('data/logs/detector.log', 'a') as log_file:
+            log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - ERROR - Failed to restart services: {e}\n") 
