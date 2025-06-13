@@ -37,6 +37,7 @@ camera:
   framerate: 30
   autofocus_mode: false  # Set to true to enable autofocus, false to disable
   autofocus_enabled: true  # Set to true to enable autofocus, false to disable
+  gain: 6.0  # Set the gain value for image capture
   timeout: 5000
   lens_position: 10  # Set lens position for focusing at 10 cm
   # lens_position: 

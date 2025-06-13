@@ -37,6 +37,12 @@ def validate_value_types(config: dict) -> None:
             logging.error("Error: 'lens_position' must be an integer between 0 and 10")
             raise ValueError("Error: 'lens_position' must be an integer between 0 and 10")
 
+    # Validate gain
+    if 'gain' in config:
+        if not isinstance(config['gain'], (int, float)) or config['gain'] < 0:
+            logging.error("Error: 'gain' must be a non-negative number")
+            raise ValueError("Error: 'gain' must be a non-negative number")
+
 def load_config(config_path='config/config.yaml') -> dict:
     """Load the configuration from the specified YAML file.
 

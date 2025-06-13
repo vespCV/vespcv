@@ -111,6 +111,7 @@ def capture_image(max_retries=3):
         autofocus_enabled = config['camera'].get('autofocus_enabled', True)  # Get autofocus setting
         autofocus_mode = config['camera'].get('autofocus_mode', False)  # Get autofocus mode setting
         lens_position = config['camera'].get('lens_position', 10)  # Get lens position
+        gain = config['camera'].get('gain', 1.0)  # Get gain value
         
         # Ensure images folder exists
         os.makedirs(images_folder, exist_ok=True)
@@ -135,6 +136,7 @@ def capture_image(max_retries=3):
                         "--width", width,
                         "--height", height,
                         "--ev", "0.5",  # Adjust exposure compensation
+                        "--gain", str(gain),  # Include gain in the command
                         "--timeout", "5000"
                     ]
                     
@@ -179,6 +181,7 @@ def capture_image(max_retries=3):
                 "-o", image_path,
                 "--width", width,
                 "--height", height,
+                "--gain", str(gain),  # Include gain in the command
                 "--timeout", "5000",
                 "--autofocus-mode", "continuous",
                 "--framerate", "30"
