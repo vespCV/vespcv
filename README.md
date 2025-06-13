@@ -77,6 +77,10 @@ Beekeepers, Asian hornet controlers, and researchers need a reliable, easy-to-us
    ```bash
    #!/bin/bash
 
+   # Turn Raspberry Pi Connect Off and On to reset
+   rpi-connect off
+   rpi-connect on
+
    # Change to the vespCV directory
    cd /home/vcv/vespcv
 
