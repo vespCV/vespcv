@@ -102,7 +102,7 @@ def reset_camera():
             # Quick test capture to verify camera is working
             test_path = "/tmp/test_capture.jpg"
             
-            # Use minimal test command to avoid timeouts
+            # Use test command with exposure settings
             test_command = [
                 "libcamera-still",
                 "--nopreview",
@@ -111,7 +111,9 @@ def reset_camera():
                 "--height", "480",
                 "--timeout", "5000",  # Increased timeout
                 "--immediate",
-                "--gain", "1.0"  # Conservative gain
+                "--gain", "4.0",  # High gain for brightness
+                "--exposure", "normal",
+                "--ev", "4.0"
             ]
             
             logger.debug(f"Running camera test command: {' '.join(test_command)}")
@@ -174,7 +176,7 @@ def capture_image(max_retries=3):
             retry_count = 0
             while retry_count < max_retries:
                 try:
-                    # Prepare simplified command for Arducam to avoid timeouts
+                    # Prepare command with exposure settings for Arducam
                     command = [
                         "libcamera-still",
                         "--nopreview",
@@ -185,10 +187,12 @@ def capture_image(max_retries=3):
                         "--immediate"
                     ]
                     
-                    # Add only essential parameters to avoid overwhelming the camera
+                    # Add essential parameters including exposure for brightness
                     command.extend([
                         "--gain", str(gain),
-                        "--lens", str(lens_position)
+                        "--lens", str(lens_position),
+                        "--exposure", exposure,
+                        "--ev", str(ev)
                     ])
                     
                     logger.debug(f"Running camera command: {' '.join(command)}")
@@ -210,7 +214,7 @@ def capture_image(max_retries=3):
                         if retry_count == 1:
                             logger.info("Attempting capture with lower resolution...")
                             try:
-                                # Try with 1280x960 resolution (simplified)
+                                # Try with 1280x960 resolution with exposure settings
                                 command_lower = [
                                     "libcamera-still",
                                     "--nopreview",
@@ -220,7 +224,9 @@ def capture_image(max_retries=3):
                                     "--timeout", str(timeout),
                                     "--immediate",
                                     "--gain", str(gain),
-                                    "--lens", str(lens_position)
+                                    "--lens", str(lens_position),
+                                    "--exposure", exposure,
+                                    "--ev", str(ev)
                                 ]
                                 
                                 logger.debug(f"Running lower resolution command: {' '.join(command_lower)}")
@@ -256,7 +262,9 @@ def capture_image(max_retries=3):
                                 "--height", "480",
                                 "--timeout", "8000",
                                 "--immediate",
-                                "--gain", "1.0"
+                                "--gain", "4.0",
+                                "--exposure", "normal",
+                                "--ev", "4.0"
                             ]
                             
                             logger.debug(f"Running minimal command: {' '.join(command_minimal)}")
