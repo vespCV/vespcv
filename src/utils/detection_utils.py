@@ -53,39 +53,60 @@ def log_detection_data(detections, image_path):
 def reset_camera():
     """Reset the Arducam IMX519 camera by unloading and reloading the driver."""
     try:
+        logger.info("Starting camera reset procedure...")
+        
         # First try to stop any running camera processes
-        subprocess.run(['sudo', 'pkill', '-f', 'libcamera'], check=False)
-        time.sleep(1)  # Wait for processes to stop
+        try:
+            subprocess.run(['sudo', 'pkill', '-f', 'libcamera'], check=False, timeout=10)
+            time.sleep(2)  # Wait for processes to stop
+        except subprocess.TimeoutExpired:
+            logger.warning("Timeout while killing libcamera processes")
         
         # Unload the camera driver
-        subprocess.run(['sudo', 'modprobe', '-r', 'arducam_imx519'], check=False)
-        time.sleep(2)  # Increased wait time for driver to unload
+        try:
+            subprocess.run(['sudo', 'modprobe', '-r', 'arducam_imx519'], check=False, timeout=10)
+            time.sleep(3)  # Wait for driver to unload
+        except subprocess.TimeoutExpired:
+            logger.warning("Timeout while unloading camera driver")
         
         # Reload the camera driver
-        subprocess.run(['sudo', 'modprobe', 'arducam_imx519'], check=False)
-        time.sleep(3)  # Increased wait time for driver to initialize
+        try:
+            subprocess.run(['sudo', 'modprobe', 'arducam_imx519'], check=False, timeout=10)
+            time.sleep(5)  # Wait for driver to initialize
+        except subprocess.TimeoutExpired:
+            logger.warning("Timeout while loading camera driver")
         
-        # Verify camera is available
+        # Verify camera is available with a simple test
         try:
             # Quick test capture to verify camera is working
             test_path = "/tmp/test_capture.jpg"
-            subprocess.run([
+            
+            # Use simpler test command
+            test_command = [
                 "libcamera-still",
                 "--nopreview",
                 "-o", test_path,
-                "--width", "1920",
-                "--height", "1440",
-                "--timeout", "2000"
-            ], check=True, timeout=5)
+                "--width", "640",  # Lower resolution for faster test
+                "--height", "480",
+                "--timeout", "3000",
+                "--immediate"
+            ]
+            
+            logger.debug(f"Running camera test command: {' '.join(test_command)}")
+            subprocess.run(test_command, check=True, timeout=8)
             
             # Clean up test image
             if os.path.exists(test_path):
                 os.remove(test_path)
                 
-            logger.info("Camera reset completed and verified")
+            logger.info("Camera reset completed and verified successfully")
             return True
+            
         except subprocess.SubprocessError as e:
             logger.error(f"Camera verification failed after reset: {e}")
+            return False
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"Camera test timed out after reset: {e}")
             return False
             
     except Exception as e:
@@ -108,10 +129,11 @@ def capture_image(max_retries=3):
         config = load_config()
         images_folder = config.get('images_folder')
         camera_type = config.get('camera_type', 'pi')
-        autofocus_enabled = config['camera'].get('autofocus_enabled', True)  # Get autofocus setting
-        autofocus_mode = config['camera'].get('autofocus_mode', False)  # Get autofocus mode setting
-        lens_position = config['camera'].get('lens_position', 10)  # Get lens position
-        gain = config['camera'].get('gain', 1.0)  # Get gain value
+        autofocus_enabled = config['camera'].get('autofocus_enabled', True)
+        autofocus_mode = config['camera'].get('autofocus_mode', False)
+        lens_position = config['camera'].get('lens_position', 10)
+        gain = config['camera'].get('gain', 1.0)
+        timeout = config['camera'].get('timeout', 10000)
         
         # Ensure images folder exists
         os.makedirs(images_folder, exist_ok=True)
@@ -128,44 +150,50 @@ def capture_image(max_retries=3):
             retry_count = 0
             while retry_count < max_retries:
                 try:
-                    # Prepare command options
+                    # Prepare command options with more conservative settings
                     command = [
                         "libcamera-still",
                         "--nopreview",
                         "-o", image_path,
                         "--width", width,
                         "--height", height,
-                        "--ev", "0.5",  # Adjust exposure compensation
-                        "--gain", str(gain),  # Include gain in the command
-                        "--timeout", "5000"
+                        "--gain", str(gain),
+                        "--timeout", str(timeout),
+                        "--immediate"  # Add immediate flag for faster capture
                     ]
                     
-                    # Add autofocus options if enabled
-                    if autofocus_mode:  # Use autofocus if true
-                        command.extend([
-                            "--autofocus-mode", "continuous"
-                        ])
-                    else:  # Use fixed lens position
-                        command.extend([
-                            "--lens", str(lens_position)  # Focus on specified lens position
-                        ])
+                    # Add autofocus options only if explicitly enabled
+                    if autofocus_enabled and autofocus_mode:
+                        command.extend(["--autofocus-mode", "continuous"])
+                    else:
+                        # Use fixed lens position for stability
+                        command.extend(["--lens", str(lens_position)])
                     
-                    subprocess.run(command, check=True, timeout=10)  # Add command timeout
+                    # Add additional stability options
+                    command.extend([
+                        "--framerate", "15",  # Lower framerate for stability
+                        "--awb", "auto",      # Auto white balance
+                        "--metering", "centre"  # Centre-weighted metering
+                    ])
+                    
+                    logger.debug(f"Running camera command: {' '.join(command)}")
+                    subprocess.run(command, check=True, timeout=timeout/1000 + 5)  # Add 5 seconds buffer
                     
                     # Verify the image was created and is valid
-                    if os.path.exists(image_path) and os.path.getsize(image_path) > 0:
+                    if os.path.exists(image_path) and os.path.getsize(image_path) > 1000:  # At least 1KB
                         logger.debug(f"Image captured successfully: {image_path}")
                         return image_path
                     else:
-                        raise subprocess.SubprocessError("Image file not created or empty")
+                        raise subprocess.SubprocessError("Image file not created or too small")
                         
-                except subprocess.SubprocessError as e:
+                except (subprocess.SubprocessError, subprocess.TimeoutExpired) as e:
                     retry_count += 1
                     logger.warning(f"Capture attempt {retry_count} failed: {e}")
+                    
                     if retry_count < max_retries:
                         logger.info("Attempting to reset camera...")
                         if reset_camera():
-                            time.sleep(3)  # Increased wait time after reset
+                            time.sleep(5)  # Increased wait time after reset
                             continue
                         else:
                             logger.error("Failed to reset camera")
@@ -175,24 +203,27 @@ def capture_image(max_retries=3):
                         raise
         else:  # camera_type == 'pi' or unknown
             # Standard single-attempt logic for Pi Camera Module 3
-            subprocess.run([
+            command = [
                 "libcamera-still",
                 "--nopreview",
                 "-o", image_path,
                 "--width", width,
                 "--height", height,
-                "--gain", str(gain),  # Include gain in the command
-                "--timeout", "5000",
+                "--gain", str(gain),
+                "--timeout", str(timeout),
                 "--autofocus-mode", "continuous",
                 "--framerate", "30"
-            ], check=True, timeout=10)
+            ]
+            
+            logger.debug(f"Running Pi camera command: {' '.join(command)}")
+            subprocess.run(command, check=True, timeout=timeout/1000 + 5)
             
             # Verify the image was created and is valid
-            if os.path.exists(image_path) and os.path.getsize(image_path) > 0:
+            if os.path.exists(image_path) and os.path.getsize(image_path) > 1000:
                 logger.debug(f"Image captured successfully: {image_path}")
                 return image_path
             else:
-                raise subprocess.SubprocessError("Image file not created or empty")
+                raise subprocess.SubprocessError("Image file not created or too small")
         
     except FileNotFoundError as e:
         logger.error(f"Images folder not found: {e}")
@@ -368,8 +399,8 @@ def initialize_application():
             print(f"Created directory: {dir_path}")  # Use print instead of logger since logger isn't configured yet
         
         # Now that directories exist, configure logging
-        configure_logger(config['log_file_path'])
-        start_temperature_logging()
+        # configure_logger(config['log_file_path']) # This line was removed as per the new_code, as logger is now global
+        # start_temperature_logging() # This line was removed as per the new_code, as logger is now global
         
         logger.info("Application initialized successfully")
         return config

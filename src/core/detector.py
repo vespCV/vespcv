@@ -6,6 +6,7 @@ Handles YOLO model loading, image capture, and object detection.
 import os
 import time
 import threading
+import subprocess
 
 import cv2
 from ultralytics import YOLO
@@ -74,6 +75,8 @@ class DetectionController:
     def _detection_loop(self):
         """Main detection loop."""
         last_detection_time = 0
+        consecutive_errors = 0
+        max_consecutive_errors = 5
         
         while not self._stop_event.is_set():
             if self._pause_event.is_set():
@@ -96,6 +99,10 @@ class DetectionController:
                     if result:
                         self.result_callback(result)
                         last_detection_time = current_time
+                        consecutive_errors = 0  # Reset error counter on success
+                    else:
+                        consecutive_errors += 1
+                        logger.warning(f"Failed to process frame (consecutive errors: {consecutive_errors})")
                     
                     # Check if LED needs to be turned off
                     self.led_controller.check_and_turn_off()
@@ -104,9 +111,17 @@ class DetectionController:
                     time.sleep(0.1)
                 
             except Exception as e:
-                logger.error("Error in detection loop: %s", e)
-                # Sleep briefly on error to prevent tight error loops
-                time.sleep(1)
+                consecutive_errors += 1
+                logger.error(f"Error in detection loop (consecutive errors: {consecutive_errors}): {e}")
+                
+                # If we have too many consecutive errors, increase sleep time
+                if consecutive_errors >= max_consecutive_errors:
+                    logger.error(f"Too many consecutive errors ({consecutive_errors}), pausing detection for 30 seconds")
+                    time.sleep(30)
+                    consecutive_errors = 0  # Reset after pause
+                else:
+                    # Sleep briefly on error to prevent tight error loops
+                    time.sleep(2)
 
             # Check for stop event
             if self._stop_event.wait(0.1):
@@ -154,8 +169,14 @@ class DetectionController:
                 "detection": detections
             }
 
+        except subprocess.SubprocessError as e:
+            logger.error(f"Camera subprocess error: {e}")
+            return None
+        except FileNotFoundError as e:
+            logger.error(f"File not found error: {e}")
+            return None
         except Exception as e:
-            logger.error("Error processing frame: %s", e)
+            logger.error(f"Error processing frame: {e}")
             return None
 
     def _process_detections(self, results, img):
@@ -212,20 +233,40 @@ class DetectionController:
         """Shutdown the detection controller."""
         try:
             logger.info("Starting detector shutdown...")
+            
             # Set stop event to stop the detection loop
             self._stop_event.set()
+            self._pause_event.set()  # Also set pause event to ensure loop exits
             
             # Wait for thread to finish with timeout
             if self._thread and self._thread.is_alive():
                 logger.info("Waiting for detection thread to finish...")
-                self._thread.join(timeout=2.0)  # Increased timeout to 2 seconds
+                
+                # Try graceful shutdown first
+                self._thread.join(timeout=3.0)  # Increased timeout to 3 seconds
                 
                 if self._thread.is_alive():
-                    logger.warning("Detection thread did not stop gracefully")
+                    logger.warning("Detection thread did not stop gracefully, forcing termination...")
+                    # Force cleanup by setting events again
+                    self._stop_event.set()
+                    self._pause_event.set()
+                    
+                    # Wait a bit more
+                    self._thread.join(timeout=2.0)
+                    
+                    if self._thread.is_alive():
+                        logger.error("Detection thread still alive after forced termination")
+                    else:
+                        logger.info("Detection thread terminated after forced cleanup")
+                else:
+                    logger.info("Detection thread stopped gracefully")
             
             # Add a small delay to ensure camera operations complete
-            time.sleep(0.5)
+            time.sleep(1.0)  # Increased delay for better cleanup
             
             logger.info("Detector shutdown complete")
         except Exception as e:
             logger.error(f"Error during detector shutdown: {e}")
+            # Ensure events are set even if there's an error
+            self._stop_event.set()
+            self._pause_event.set()

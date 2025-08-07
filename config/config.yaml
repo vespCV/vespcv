@@ -28,24 +28,18 @@ chart_interval: 15
 # Hardware Configuration
 # --------------------
 # Camera type: 'pi' for Camera Module 3 (default), 'arducam' for Arducam IMX519
-camera_type: arducam  # Changed to pi camera as default
+camera_type: arducam
 
 # Camera settings
 camera:
   width: 1920
   height: 1440
   framerate: 30
-  autofocus_mode: false  # Set to true to enable autofocus, false to disable
-  autofocus_enabled: true  # Set to true to enable autofocus, false to disable
-  gain: 6.0  # Set the gain value for image capture
-  timeout: 5000
-  lens_position: 10  # Set lens position for focusing at 10 cm
-  # lens_position: 
-  #   - 0: Far distance (approximately 3 meters)
-  #   - 1: Medium distance (approximately 1 meter)
-  #   - 10: Close-up (approximately 10 centimeters)
-  # This setting adjusts the focus distance of the Arducam lens.
-  # Ensure the lens is set to the correct position for optimal focus.
+  autofocus_enabled: false  # Disable autofocus for stability
+  autofocus_mode: false     # Keep autofocus mode disabled
+  gain: 1.0                 # Reduced gain for better stability
+  timeout: 10000            # Increased timeout
+  lens_position: 10          # Medium distance focus (1 meter) - more stable than 10cm
 
 # GPIO control settings
 led:
@@ -57,8 +51,3 @@ led:
 # -------------------
 # Enable/disable features by default
 mail_alert_enabled: false  # Whether mail alerts are enabled by default
-
-# Camera Type
-# Default is Camera Module 3 (pi)
-# Arducam IMX519 is supported (arducam)
-camera_type: arducam
