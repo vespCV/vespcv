@@ -37,9 +37,11 @@ camera:
   framerate: 30
   autofocus_enabled: false  # Disable autofocus for stability
   autofocus_mode: false     # Keep autofocus mode disabled
-  gain: 1.0                 # Reduced gain for better stability
+  gain: 2.0                 # Increased gain for better exposure
   timeout: 10000            # Increased timeout
   lens_position: 10          # Medium distance focus (1 meter) - more stable than 10cm
+  exposure: normal          # Normal exposure mode
+  ev: 2.0                   # Exposure value (positive = brighter, negative = darker)
 
 # GPIO control settings
 led:

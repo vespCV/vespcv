@@ -93,7 +93,7 @@ def reset_camera():
             # Quick test capture to verify camera is working
             test_path = "/tmp/test_capture.jpg"
             
-            # Use simpler test command with more conservative settings
+            # Use simpler test command with better exposure settings
             test_command = [
                 "libcamera-still",
                 "--nopreview",
@@ -102,8 +102,10 @@ def reset_camera():
                 "--height", "480",
                 "--timeout", "5000",  # Increased timeout
                 "--immediate",
-                "--gain", "1.0",  # Add gain setting
-                "--framerate", "15"  # Lower framerate for stability
+                "--gain", "2.0",  # Better gain for exposure
+                "--framerate", "15",  # Lower framerate for stability
+                "--exposure", "normal",  # Normal exposure mode
+                "--ev", "2.0"  # Brighter exposure value
             ]
             
             logger.debug(f"Running camera test command: {' '.join(test_command)}")
@@ -148,6 +150,8 @@ def capture_image(max_retries=3):
         lens_position = config['camera'].get('lens_position', 10)
         gain = config['camera'].get('gain', 1.0)
         timeout = config['camera'].get('timeout', 10000)
+        exposure = config['camera'].get('exposure', 'auto')
+        ev = config['camera'].get('ev', 0.0)
         
         # Ensure images folder exists
         os.makedirs(images_folder, exist_ok=True)
@@ -164,7 +168,7 @@ def capture_image(max_retries=3):
             retry_count = 0
             while retry_count < max_retries:
                 try:
-                    # Prepare command options with more conservative settings for Arducam
+                    # Prepare command options with better exposure settings for Arducam
                     command = [
                         "libcamera-still",
                         "--nopreview",
@@ -179,11 +183,13 @@ def capture_image(max_retries=3):
                     # For Arducam, always use fixed lens position for stability
                     command.extend(["--lens", str(lens_position)])
                     
-                    # Add additional stability options for Arducam
+                    # Add exposure and stability options for Arducam
                     command.extend([
                         "--framerate", "15",  # Lower framerate for stability
                         "--awb", "auto",      # Auto white balance
-                        "--metering", "centre"  # Centre-weighted metering
+                        "--metering", "centre",  # Centre-weighted metering
+                        "--exposure", exposure,  # Normal exposure mode
+                        "--ev", str(ev)  # Exposure value
                     ])
                     
                     logger.debug(f"Running camera command: {' '.join(command)}")
@@ -218,7 +224,9 @@ def capture_image(max_retries=3):
                                     "--lens", str(lens_position),
                                     "--framerate", "15",
                                     "--awb", "auto",
-                                    "--metering", "centre"
+                                    "--metering", "centre",
+                                    "--exposure", exposure,
+                                    "--ev", str(ev)
                                 ]
                                 
                                 logger.debug(f"Running lower resolution command: {' '.join(command_lower)}")
@@ -254,7 +262,9 @@ def capture_image(max_retries=3):
                                 "--height", "480",
                                 "--timeout", "8000",
                                 "--immediate",
-                                "--gain", "1.0"
+                                "--gain", "2.0",
+                                "--exposure", "normal",
+                                "--ev", "2.0"
                             ]
                             
                             logger.debug(f"Running minimal command: {' '.join(command_minimal)}")
