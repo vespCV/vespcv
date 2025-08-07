@@ -76,7 +76,7 @@ class DetectionController:
         """Main detection loop."""
         last_detection_time = 0
         consecutive_errors = 0
-        max_consecutive_errors = 5
+        max_consecutive_errors = 10  # Reduced from 5 to trigger reboot sooner
         
         while not self._stop_event.is_set():
             if self._pause_event.is_set():
@@ -114,11 +114,22 @@ class DetectionController:
                 consecutive_errors += 1
                 logger.error(f"Error in detection loop (consecutive errors: {consecutive_errors}): {e}")
                 
-                # If we have too many consecutive errors, increase sleep time
+                # If we have too many consecutive errors, trigger reboot
                 if consecutive_errors >= max_consecutive_errors:
-                    logger.error(f"Too many consecutive errors ({consecutive_errors}), pausing detection for 30 seconds")
-                    time.sleep(30)
-                    consecutive_errors = 0  # Reset after pause
+                    logger.critical(f"Too many consecutive errors ({consecutive_errors}), triggering system reboot...")
+                    try:
+                        # Schedule reboot in 1 minute to allow logging to complete
+                        import subprocess
+                        subprocess.run(['sudo', 'shutdown', '-r', '+1'], check=False)
+                        logger.critical("System reboot scheduled in 1 minute")
+                        # Exit the process to allow reboot to proceed
+                        import sys
+                        sys.exit(1)
+                    except Exception as e:
+                        logger.critical(f"Failed to schedule reboot: {e}")
+                        # Force exit anyway
+                        import sys
+                        sys.exit(1)
                 else:
                     # Sleep briefly on error to prevent tight error loops
                     time.sleep(2)

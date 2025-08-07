@@ -148,6 +148,10 @@ def capture_image(max_retries=3):
         FileNotFoundError: If the images folder doesn't exist
         subprocess.SubprocessError: If the camera capture fails after all retries
     """
+    # Global counter for failed camera resets
+    global camera_reset_failures
+    if 'camera_reset_failures' not in globals():
+        camera_reset_failures = 0
     try:
         # Load configuration
         config = load_config()
@@ -201,6 +205,8 @@ def capture_image(max_retries=3):
                     # Verify the image was created and is valid
                     if os.path.exists(image_path) and os.path.getsize(image_path) > 1000:  # At least 1KB
                         logger.debug(f"Image captured successfully: {image_path}")
+                        # Reset the camera reset failure counter on successful capture
+                        camera_reset_failures = 0
                         return image_path
                     else:
                         raise subprocess.SubprocessError("Image file not created or too small")
@@ -235,6 +241,8 @@ def capture_image(max_retries=3):
                                 # Verify the image was created and is valid
                                 if os.path.exists(image_path) and os.path.getsize(image_path) > 1000:
                                     logger.debug(f"Lower resolution image captured successfully: {image_path}")
+                                    # Reset the camera reset failure counter on successful capture
+                                    camera_reset_failures = 0
                                     return image_path
                                 else:
                                     raise subprocess.SubprocessError("Lower resolution image file not created or too small")
@@ -249,6 +257,23 @@ def capture_image(max_retries=3):
                             continue
                         else:
                             logger.error("Failed to reset camera")
+                            camera_reset_failures += 1
+                            
+                            # If we've failed to reset camera 3 times, trigger a reboot
+                            if camera_reset_failures >= 3:
+                                logger.critical(f"Camera reset failed {camera_reset_failures} times. Triggering system reboot...")
+                                try:
+                                    # Schedule reboot in 10 seconds to allow logging to complete
+                                    subprocess.run(['sudo', 'shutdown', '-r', '+1'], check=False)
+                                    logger.critical("System reboot scheduled in 1 minute")
+                                    # Exit the process to allow reboot to proceed
+                                    import sys
+                                    sys.exit(1)
+                                except Exception as e:
+                                    logger.critical(f"Failed to schedule reboot: {e}")
+                                    # Force exit anyway
+                                    import sys
+                                    sys.exit(1)
                             break
                     else:
                         # Final attempt: try with even lower resolution and different settings
@@ -273,6 +298,8 @@ def capture_image(max_retries=3):
                             # Verify the image was created and is valid
                             if os.path.exists(image_path) and os.path.getsize(image_path) > 1000:
                                 logger.debug(f"Minimal settings image captured successfully: {image_path}")
+                                # Reset the camera reset failure counter on successful capture
+                                camera_reset_failures = 0
                                 return image_path
                             else:
                                 raise subprocess.SubprocessError("Minimal settings image file not created or too small")
