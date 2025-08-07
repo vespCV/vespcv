@@ -31,6 +31,10 @@ def log_detection_data(detections, image_path):
         class_name = detections.get('class', 'no_detection')
         confidence = detections.get('confidence', '0.00')
         
+        # Get all detections if available
+        all_detections = detections.get('all_detections', [])
+        all_detections_str = ";".join([f"{d['class']}:{d['confidence']:.2f}" for d in all_detections]) if all_detections else ""
+        
         # Write to log file
         log_path = os.path.join(logs_dir, 'detections.log')
         
@@ -40,10 +44,10 @@ def log_detection_data(detections, image_path):
         with open(log_path, 'a') as f:
             # Write header if file is new
             if not file_exists:
-                f.write("Timestamp,Class,Confidence,Image Path\n")
+                f.write("Timestamp,Primary_Class,Primary_Confidence,All_Detections,Image_Path\n")
             
             # Write data row
-            f.write(f"{timestamp},{class_name},{confidence},{image_path}\n")
+            f.write(f"{timestamp},{class_name},{confidence},{all_detections_str},{image_path}\n")
             
         logger.debug(f"Detection data logged to {log_path}")
         
@@ -353,6 +357,36 @@ def save_original_image(config, detections=None, results=None):
 
     except Exception as e:
         logger.error(f"Error saving original image: {e}")
+        return None
+
+def save_main_detection_image(image, detections, config):
+    """Save a detection image in the main images folder for easy access.
+    
+    Args:
+        image: The image to save
+        detections: Dictionary containing detection information
+        config: Configuration dictionary
+        
+    Returns:
+        str: Path to the saved image
+    """
+    try:
+        if detections.get("should_archive"):
+            class_name = detections["class"]
+            confidence = detections["confidence"]
+            timestamp = detections["timestamp"]
+            
+            # Create a more descriptive filename
+            main_filename = f"{class_name}-{confidence}-{timestamp}.jpg"
+            main_path = os.path.join(config['images_folder'], main_filename)
+            
+            # Save the image
+            cv2.imwrite(main_path, image)
+            logger.debug(f"Main detection image saved: {main_path}")
+            return main_path
+        return None
+    except Exception as e:
+        logger.error(f"Error saving main detection image: {e}")
         return None
 
 def save_archived_image(image, detections, config):
