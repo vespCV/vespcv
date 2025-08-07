@@ -19,6 +19,30 @@ def validate_value_types(config: dict) -> None:
         logging.error("Error: 'capture_interval' must be a positive number")
         raise ValueError("Error: 'capture_interval' must be a positive number")
 
+    # Validate camera_type
+    if 'camera_type' in config:
+        if config['camera_type'] not in ['pi', 'arducam']:
+            logging.error("Error: 'camera_type' must be either 'pi' or 'arducam'")
+            raise ValueError("Error: 'camera_type' must be either 'pi' or 'arducam'")
+
+    # Validate autofocus_mode
+    if 'autofocus_mode' in config:
+        if not isinstance(config['autofocus_mode'], bool):
+            logging.error("Error: 'autofocus_mode' must be a boolean value")
+            raise ValueError("Error: 'autofocus_mode' must be a boolean value")
+
+    # Validate lens_position
+    if 'lens_position' in config:
+        if not isinstance(config['lens_position'], int) or not (0 <= config['lens_position'] <= 10):
+            logging.error("Error: 'lens_position' must be an integer between 0 and 10")
+            raise ValueError("Error: 'lens_position' must be an integer between 0 and 10")
+
+    # Validate gain
+    if 'gain' in config:
+        if not isinstance(config['gain'], (int, float)) or config['gain'] < 0:
+            logging.error("Error: 'gain' must be a non-negative number")
+            raise ValueError("Error: 'gain' must be a non-negative number")
+
 def load_config(config_path='config/config.yaml') -> dict:
     """Load the configuration from the specified YAML file.
 

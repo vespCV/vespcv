@@ -17,12 +17,38 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont
 import tkinter as tk
 from tkinter import ttk
 from tkinter import scrolledtext
+import subprocess
 
 # Local application/library imports
 from src.core.detector import DetectionController
 from src.utils.gpio_controller import GPIOController
 from src.utils.mail_utils import prepare_and_send_detection_email  # Update import
 from src.utils.image_utils import ImageHandler, create_placeholder_image, create_thumbnail
+
+# Initialize logger
+logger = logging.getLogger(__name__)
+
+# Define the restart_services function
+def restart_services():
+    """Restart SSH and rpi-connect services."""
+    try:
+        # Restart SSH service
+        subprocess.run(['sudo', 'systemctl', 'restart', 'ssh'], check=True)
+        logger.info("SSH service restarted successfully.")
+        
+        # Restart rpi-connect service
+        subprocess.run(['rpi-connect', 'on'], check=True)
+        logger.info("rpi-connect service restarted successfully.")
+        
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to restart services: {e}")
+
+# Define the schedule_service_restart function
+def schedule_service_restart(interval_minutes=15):
+    """Schedule the service restart every specified interval."""
+    while True:
+        restart_services()
+        time.sleep(interval_minutes * 60)  # Convert minutes to seconds
 
 class ImageHandler:
     def __init__(self, logger):
@@ -107,6 +133,7 @@ class vespcvGUI(tk.Tk):
         style.configure('Red.TButton', background='red', foreground='black')
         style.configure('Orange.TButton', background='orange', foreground='black')
         style.configure('Green.TButton', background='green', foreground='black')
+        style.configure('Green.TButton.disabled', background='lightgray', foreground='black')  # Example for disabled state
         style.configure('LED.TButton', background='gray', foreground='black')
         style.configure('Blue.TButton', background='blue', foreground='white')  # Add blue style
         style.configure('Yellow.TButton', background='yellow', foreground='black')
@@ -347,23 +374,46 @@ class vespcvGUI(tk.Tk):
     def start_detection(self):
         """Start the detection process."""
         if not self.is_detecting:
-            self.is_detecting = True
-            self.detector.start()
-            self.logger.info("Detection started")
+            try:
+                self.is_detecting = True
+                self.detector.start()
+                self.logger.info("Detection started")
+                
+                # Update button states in the main thread
+                self.after(0, lambda: self.start_button.configure(style='Green.TButton.disabled', state='disabled'))
+                self.after(0, lambda: self.stop_button.configure(state='normal'))
+            except Exception as e:
+                self.logger.error(f"Error starting detection: {str(e)}")
+                self.is_detecting = False
+                self.after(0, lambda: self.start_button.configure(style='Green.TButton', state='normal'))
+                self.after(0, lambda: self.stop_button.configure(state='disabled'))
 
     def stop_detection(self):
         """Stop the detection process."""
         if self.is_detecting:
-            self.is_detecting = False
-            self.detector.stop()
-            # Add a small delay to allow camera operations to complete
-            time.sleep(0.5)
-            self.logger.info("Detection stopped")
+            try:
+                self.is_detecting = False
+                self.detector.stop()
+                # Add a small delay to allow camera operations to complete
+                time.sleep(0.5)
+                self.logger.info("Detection stopped")
+                
+                # Update button states in the main thread
+                self.after(0, lambda: self.start_button.configure(style='Green.TButton', state='normal'))
+                self.after(0, lambda: self.stop_button.configure(state='disabled'))
+            except Exception as e:
+                self.logger.error(f"Error stopping detection: {str(e)}")
+                self.is_detecting = True
+                self.after(0, lambda: self.start_button.configure(style='Green.TButton', state='normal'))
+                self.after(0, lambda: self.stop_button.configure(state='disabled'))
 
     def handle_detection_result(self, result):
         """Handle detection results from the detector."""
-        # Use self.after() to update GUI elements safely
-        self.after(0, self.update_gui_with_result, result)
+        try:
+            # Use self.after() to update GUI elements safely from the main thread
+            self.after(0, lambda: self.update_gui_with_result(result))
+        except Exception as e:
+            self.logger.error(f"Error handling detection result: {str(e)}")
 
     def update_gui_with_result(self, result):
         """Update the GUI with the latest detection result."""
@@ -790,15 +840,33 @@ class vespcvGUI(tk.Tk):
             if hasattr(self, 'detector'):
                 self.detector.shutdown()
             
+            # Log shutdown
+            self.logger.info("Application shutdown complete")
+            
             # Destroy the window
             self.destroy()
             
         except Exception as e:
-            self.logger.error(f"Error during application shutdown: {e}")
+            self.logger.error(f"Error during application shutdown: {str(e)}")
             # Force destroy the window even if there's an error
             self.destroy()
 
+def main():
+    """Main function to start the application."""
+    configure_logger('data/logs/system.log') 
+    start_temperature_logging()  
+    
+    # Start the service restart in a separate thread
+    service_restart_thread = threading.Thread(target=schedule_service_restart, args=(15,))
+    service_restart_thread.daemon = True  # Daemonize thread
+    service_restart_thread.start()
+    
+    try:
+        while True:
+            time.sleep(1)  # Keep the main thread alive
+    except KeyboardInterrupt:
+        print("System statistics logging stopped.")
+
 if __name__ == "__main__":
-    app = vespcvGUI()
-    app.mainloop()
+    main()
     

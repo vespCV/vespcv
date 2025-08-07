@@ -6,11 +6,12 @@ Handles YOLO model loading, image capture, and object detection.
 import os
 import time
 import threading
+import subprocess
 
 import cv2
 from ultralytics import YOLO
 
-from src.utils.detection_utils import capture_image, save_annotated_image, save_original_image, save_archived_image
+from src.utils.detection_utils import capture_image, save_annotated_image, save_original_image, save_archived_image, save_main_detection_image
 from src.core.logger import logger
 from src.utils.gpio_controller import GPIOController
 
@@ -74,6 +75,8 @@ class DetectionController:
     def _detection_loop(self):
         """Main detection loop."""
         last_detection_time = 0
+        consecutive_errors = 0
+        max_consecutive_errors = 5
         
         while not self._stop_event.is_set():
             if self._pause_event.is_set():
@@ -96,6 +99,10 @@ class DetectionController:
                     if result:
                         self.result_callback(result)
                         last_detection_time = current_time
+                        consecutive_errors = 0  # Reset error counter on success
+                    else:
+                        consecutive_errors += 1
+                        logger.warning(f"Failed to process frame (consecutive errors: {consecutive_errors})")
                     
                     # Check if LED needs to be turned off
                     self.led_controller.check_and_turn_off()
@@ -104,9 +111,17 @@ class DetectionController:
                     time.sleep(0.1)
                 
             except Exception as e:
-                logger.error("Error in detection loop: %s", e)
-                # Sleep briefly on error to prevent tight error loops
-                time.sleep(1)
+                consecutive_errors += 1
+                logger.error(f"Error in detection loop (consecutive errors: {consecutive_errors}): {e}")
+                
+                # If we have too many consecutive errors, increase sleep time
+                if consecutive_errors >= max_consecutive_errors:
+                    logger.error(f"Too many consecutive errors ({consecutive_errors}), pausing detection for 30 seconds")
+                    time.sleep(30)
+                    consecutive_errors = 0  # Reset after pause
+                else:
+                    # Sleep briefly on error to prevent tight error loops
+                    time.sleep(2)
 
             # Check for stop event
             if self._stop_event.wait(0.1):
@@ -139,23 +154,45 @@ class DetectionController:
             if detections.get("class") == "vvel":
                 self.led_controller.handle_detection()
 
-            # Save original image with detection metadata and YOLO results
-            original_path = save_original_image(self.config, detections, results)
+            # Save ALL images when any detection is made (not just vvel)
+            if detections.get("should_archive"):
+                # Save original image with detection metadata and YOLO results
+                original_path = save_original_image(self.config, detections, results)
 
-            # Save annotated image for GUI
-            annotated_path = save_annotated_image(img, results, self.config)
-            
-            # Archive image if detection is valid
-            archive_path = save_archived_image(img, detections, self.config)
+                # Save annotated image for GUI
+                annotated_path = save_annotated_image(img, results, self.config)
+                
+                # Save archived image with detection info in filename
+                archive_path = save_archived_image(img, detections, self.config)
+                
+                # Save a copy in the main images folder for easy access
+                main_image_path = save_main_detection_image(img, detections, self.config)
+                
+                logger.info(f"Detection saved: {detections['class']} (confidence: {detections['confidence']})")
+                
+                return {
+                    "annotated_path": annotated_path,
+                    "original_path": original_path,
+                    "archive_path": archive_path,
+                    "main_image_path": main_image_path,
+                    "detection": detections
+                }
+            else:
+                # No detection, just save annotated image for GUI
+                annotated_path = save_annotated_image(img, results, self.config)
+                return {
+                    "annotated_path": annotated_path,
+                    "detection": detections
+                }
 
-            return {
-                "annotated_path": annotated_path,
-                "original_path": original_path,
-                "detection": detections
-            }
-
+        except subprocess.SubprocessError as e:
+            logger.error(f"Camera subprocess error: {e}")
+            return None
+        except FileNotFoundError as e:
+            logger.error(f"File not found error: {e}")
+            return None
         except Exception as e:
-            logger.error("Error processing frame: %s", e)
+            logger.error(f"Error processing frame: {e}")
             return None
 
     def _process_detections(self, results, img):
@@ -165,6 +202,7 @@ class DetectionController:
         class_3_conf = 0.0
         max_conf = 0.0
         max_conf_class = None
+        all_detections = []
 
         for result in results.boxes.data.tolist():
             x1, y1, x2, y2, conf, cls = result[:6]
@@ -172,6 +210,13 @@ class DetectionController:
                 class_id = int(cls)
                 class_name = self.config['class_names'][class_id]
                 detected_classes[class_id] = max(detected_classes.get(class_id, 0), conf)  # store max conf per class
+                
+                # Store all detections for logging
+                all_detections.append({
+                    'class': class_name,
+                    'confidence': conf,
+                    'class_id': class_id
+                })
 
                 if class_id == 3 and conf > class_3_conf:
                     class_3_detected = True
@@ -191,6 +236,7 @@ class DetectionController:
                     cv2.putText(img, label, (int(x1), int(y1) - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 15.0, (0, 255, 0), 15)
 
+        # Determine the primary detection class
         if class_3_detected:
             final_class = "vvel"
             confidence = f"{class_3_conf:.2f}"
@@ -201,31 +247,57 @@ class DetectionController:
             final_class = "no_detection"
             confidence = "0.00"
 
+        # Log all detections if any were found
+        if all_detections:
+            detection_summary = ", ".join([f"{d['class']}({d['confidence']:.2f})" for d in all_detections])
+            logger.info(f"Detections found: {detection_summary}")
+
         return {
             "class": final_class,
             "confidence": confidence,
             "timestamp": time.strftime("%Y%m%d-%H%M%S"),
-            "should_archive": final_class != "no_detection"
+            "should_archive": final_class != "no_detection",
+            "all_detections": all_detections  # Include all detections for reference
         }
 
     def shutdown(self):
         """Shutdown the detection controller."""
         try:
             logger.info("Starting detector shutdown...")
+            
             # Set stop event to stop the detection loop
             self._stop_event.set()
+            self._pause_event.set()  # Also set pause event to ensure loop exits
             
             # Wait for thread to finish with timeout
             if self._thread and self._thread.is_alive():
                 logger.info("Waiting for detection thread to finish...")
-                self._thread.join(timeout=2.0)  # Increased timeout to 2 seconds
+                
+                # Try graceful shutdown first
+                self._thread.join(timeout=3.0)  # Increased timeout to 3 seconds
                 
                 if self._thread.is_alive():
-                    logger.warning("Detection thread did not stop gracefully")
+                    logger.warning("Detection thread did not stop gracefully, forcing termination...")
+                    # Force cleanup by setting events again
+                    self._stop_event.set()
+                    self._pause_event.set()
+                    
+                    # Wait a bit more
+                    self._thread.join(timeout=2.0)
+                    
+                    if self._thread.is_alive():
+                        logger.error("Detection thread still alive after forced termination")
+                    else:
+                        logger.info("Detection thread terminated after forced cleanup")
+                else:
+                    logger.info("Detection thread stopped gracefully")
             
             # Add a small delay to ensure camera operations complete
-            time.sleep(0.5)
+            time.sleep(1.0)  # Increased delay for better cleanup
             
             logger.info("Detector shutdown complete")
         except Exception as e:
             logger.error(f"Error during detector shutdown: {e}")
+            # Ensure events are set even if there's an error
+            self._stop_event.set()
+            self._pause_event.set()

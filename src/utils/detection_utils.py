@@ -31,6 +31,10 @@ def log_detection_data(detections, image_path):
         class_name = detections.get('class', 'no_detection')
         confidence = detections.get('confidence', '0.00')
         
+        # Get all detections if available
+        all_detections = detections.get('all_detections', [])
+        all_detections_str = ";".join([f"{d['class']}:{d['confidence']:.2f}" for d in all_detections]) if all_detections else ""
+        
         # Write to log file
         log_path = os.path.join(logs_dir, 'detections.log')
         
@@ -40,30 +44,100 @@ def log_detection_data(detections, image_path):
         with open(log_path, 'a') as f:
             # Write header if file is new
             if not file_exists:
-                f.write("Timestamp,Class,Confidence,Image Path\n")
+                f.write("Timestamp,Primary_Class,Primary_Confidence,All_Detections,Image_Path\n")
             
             # Write data row
-            f.write(f"{timestamp},{class_name},{confidence},{image_path}\n")
+            f.write(f"{timestamp},{class_name},{confidence},{all_detections_str},{image_path}\n")
             
         logger.debug(f"Detection data logged to {log_path}")
         
     except Exception as e:
         logger.error(f"Error logging detection data: {e}")
 
-def capture_image():
+def reset_camera():
+    """Reset the Arducam IMX519 camera by unloading and reloading the driver."""
+    try:
+        logger.info("Starting camera reset procedure...")
+        
+        # First try to stop any running camera processes
+        try:
+            subprocess.run(['sudo', 'pkill', '-f', 'libcamera'], check=False, timeout=10)
+            time.sleep(2)  # Wait for processes to stop
+        except subprocess.TimeoutExpired:
+            logger.warning("Timeout while killing libcamera processes")
+        
+        # Unload the camera driver
+        try:
+            subprocess.run(['sudo', 'modprobe', '-r', 'arducam_imx519'], check=False, timeout=10)
+            time.sleep(3)  # Wait for driver to unload
+        except subprocess.TimeoutExpired:
+            logger.warning("Timeout while unloading camera driver")
+        
+        # Reload the camera driver
+        try:
+            subprocess.run(['sudo', 'modprobe', 'arducam_imx519'], check=False, timeout=10)
+            time.sleep(5)  # Wait for driver to initialize
+        except subprocess.TimeoutExpired:
+            logger.warning("Timeout while loading camera driver")
+        
+        # Verify camera is available with a simple test
+        try:
+            # Quick test capture to verify camera is working
+            test_path = "/tmp/test_capture.jpg"
+            
+            # Use simpler test command
+            test_command = [
+                "libcamera-still",
+                "--nopreview",
+                "-o", test_path,
+                "--width", "640",  # Lower resolution for faster test
+                "--height", "480",
+                "--timeout", "3000",
+                "--immediate"
+            ]
+            
+            logger.debug(f"Running camera test command: {' '.join(test_command)}")
+            subprocess.run(test_command, check=True, timeout=8)
+            
+            # Clean up test image
+            if os.path.exists(test_path):
+                os.remove(test_path)
+                
+            logger.info("Camera reset completed and verified successfully")
+            return True
+            
+        except subprocess.SubprocessError as e:
+            logger.error(f"Camera verification failed after reset: {e}")
+            return False
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"Camera test timed out after reset: {e}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Failed to reset camera: {e}")
+        return False
+
+def capture_image(max_retries=3):
     """Capture an image using libcamera-still and save it to the configured path.
-    
+    Uses retry/reset logic only for Arducam.
+    Args:
+        max_retries (int): Maximum number of retry attempts if capture fails (Arducam only)
     Returns:
         str: Path to the captured image
-        
     Raises:
         FileNotFoundError: If the images folder doesn't exist
-        subprocess.SubprocessError: If the camera capture fails
+        subprocess.SubprocessError: If the camera capture fails after all retries
     """
     try:
         # Load configuration
         config = load_config()
         images_folder = config.get('images_folder')
+        camera_type = config.get('camera_type', 'pi')
+        autofocus_enabled = config['camera'].get('autofocus_enabled', True)
+        autofocus_mode = config['camera'].get('autofocus_mode', False)
+        lens_position = config['camera'].get('lens_position', 10)
+        gain = config['camera'].get('gain', 1.0)
+        timeout = config['camera'].get('timeout', 10000)
         
         # Ensure images folder exists
         os.makedirs(images_folder, exist_ok=True)
@@ -72,23 +146,91 @@ def capture_image():
         image_path = os.path.join(images_folder, 'image_for_detection.jpg')
         logger.debug(f"Capturing image to: {image_path}")
         
-        # Capture image using libcamera-still
-        subprocess.run([
-            "libcamera-still",
-            "--nopreview",
-            "-o", image_path,
-            "--width", "4656",
-            "--height", "3496"
-        ], check=True)
+        # Use a more stable resolution (1920x1440)
+        width = "1920"
+        height = "1440"
         
-        logger.debug(f"Image captured successfully: {image_path}")
-        return image_path
+        if camera_type == 'arducam':
+            retry_count = 0
+            while retry_count < max_retries:
+                try:
+                    # Prepare command options with more conservative settings
+                    command = [
+                        "libcamera-still",
+                        "--nopreview",
+                        "-o", image_path,
+                        "--width", width,
+                        "--height", height,
+                        "--gain", str(gain),
+                        "--timeout", str(timeout),
+                        "--immediate"  # Add immediate flag for faster capture
+                    ]
+                    
+                    # Add autofocus options only if explicitly enabled
+                    if autofocus_enabled and autofocus_mode:
+                        command.extend(["--autofocus-mode", "continuous"])
+                    else:
+                        # Use fixed lens position for stability
+                        command.extend(["--lens", str(lens_position)])
+                    
+                    # Add additional stability options
+                    command.extend([
+                        "--framerate", "15",  # Lower framerate for stability
+                        "--awb", "auto",      # Auto white balance
+                        "--metering", "centre"  # Centre-weighted metering
+                    ])
+                    
+                    logger.debug(f"Running camera command: {' '.join(command)}")
+                    subprocess.run(command, check=True, timeout=timeout/1000 + 5)  # Add 5 seconds buffer
+                    
+                    # Verify the image was created and is valid
+                    if os.path.exists(image_path) and os.path.getsize(image_path) > 1000:  # At least 1KB
+                        logger.debug(f"Image captured successfully: {image_path}")
+                        return image_path
+                    else:
+                        raise subprocess.SubprocessError("Image file not created or too small")
+                        
+                except (subprocess.SubprocessError, subprocess.TimeoutExpired) as e:
+                    retry_count += 1
+                    logger.warning(f"Capture attempt {retry_count} failed: {e}")
+                    
+                    if retry_count < max_retries:
+                        logger.info("Attempting to reset camera...")
+                        if reset_camera():
+                            time.sleep(5)  # Increased wait time after reset
+                            continue
+                        else:
+                            logger.error("Failed to reset camera")
+                            break
+                    else:
+                        logger.error(f"Failed to capture image after {max_retries} attempts")
+                        raise
+        else:  # camera_type == 'pi' or unknown
+            # Standard single-attempt logic for Pi Camera Module 3
+            command = [
+                "libcamera-still",
+                "--nopreview",
+                "-o", image_path,
+                "--width", width,
+                "--height", height,
+                "--gain", str(gain),
+                "--timeout", str(timeout),
+                "--autofocus-mode", "continuous",
+                "--framerate", "30"
+            ]
+            
+            logger.debug(f"Running Pi camera command: {' '.join(command)}")
+            subprocess.run(command, check=True, timeout=timeout/1000 + 5)
+            
+            # Verify the image was created and is valid
+            if os.path.exists(image_path) and os.path.getsize(image_path) > 1000:
+                logger.debug(f"Image captured successfully: {image_path}")
+                return image_path
+            else:
+                raise subprocess.SubprocessError("Image file not created or too small")
         
     except FileNotFoundError as e:
         logger.error(f"Images folder not found: {e}")
-        raise
-    except subprocess.SubprocessError as e:
-        logger.error(f"Failed to capture image: {e}")
         raise
     except Exception as e:
         logger.error(f"Unexpected error during image capture: {e}")
@@ -217,6 +359,36 @@ def save_original_image(config, detections=None, results=None):
         logger.error(f"Error saving original image: {e}")
         return None
 
+def save_main_detection_image(image, detections, config):
+    """Save a detection image in the main images folder for easy access.
+    
+    Args:
+        image: The image to save
+        detections: Dictionary containing detection information
+        config: Configuration dictionary
+        
+    Returns:
+        str: Path to the saved image
+    """
+    try:
+        if detections.get("should_archive"):
+            class_name = detections["class"]
+            confidence = detections["confidence"]
+            timestamp = detections["timestamp"]
+            
+            # Create a more descriptive filename
+            main_filename = f"{class_name}-{confidence}-{timestamp}.jpg"
+            main_path = os.path.join(config['images_folder'], main_filename)
+            
+            # Save the image
+            cv2.imwrite(main_path, image)
+            logger.debug(f"Main detection image saved: {main_path}")
+            return main_path
+        return None
+    except Exception as e:
+        logger.error(f"Error saving main detection image: {e}")
+        return None
+
 def save_archived_image(image, detections, config):
     """Save an archived image with detection information in the filename.
     
@@ -261,8 +433,8 @@ def initialize_application():
             print(f"Created directory: {dir_path}")  # Use print instead of logger since logger isn't configured yet
         
         # Now that directories exist, configure logging
-        configure_logger(config['log_file_path'])
-        start_temperature_logging()
+        # configure_logger(config['log_file_path']) # This line was removed as per the new_code, as logger is now global
+        # start_temperature_logging() # This line was removed as per the new_code, as logger is now global
         
         logger.info("Application initialized successfully")
         return config

@@ -27,6 +27,20 @@ chart_interval: 15
 
 # Hardware Configuration
 # --------------------
+# Camera type: 'pi' for Camera Module 3 (default), 'arducam' for Arducam IMX519
+camera_type: arducam
+
+# Camera settings
+camera:
+  width: 1920
+  height: 1440
+  framerate: 30
+  autofocus_enabled: false  # Disable autofocus for stability
+  autofocus_mode: false     # Keep autofocus mode disabled
+  gain: 1.0                 # Reduced gain for better stability
+  timeout: 10000            # Increased timeout
+  lens_position: 10          # Medium distance focus (1 meter) - more stable than 10cm
+
 # GPIO control settings
 led:
   pin: 21          # GPIO pin number for the LED
