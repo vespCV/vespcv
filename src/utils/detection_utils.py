@@ -59,12 +59,21 @@ def reset_camera():
     try:
         logger.info("Starting camera reset procedure...")
         
-        # First try to stop any running camera processes
+        # First try to stop any running camera processes more aggressively
         try:
-            subprocess.run(['sudo', 'pkill', '-f', 'libcamera'], check=False, timeout=10)
-            time.sleep(2)  # Wait for processes to stop
+            subprocess.run(['sudo', 'pkill', '-9', '-f', 'libcamera'], check=False, timeout=5)
+            time.sleep(1)  # Wait for processes to stop
         except subprocess.TimeoutExpired:
             logger.warning("Timeout while killing libcamera processes")
+        
+        # Also kill any remaining camera-related processes
+        try:
+            subprocess.run(['sudo', 'pkill', '-9', '-f', 'imx519'], check=False, timeout=5)
+            time.sleep(1)
+        except subprocess.TimeoutExpired:
+            pass
+        
+
         
         # Check if imx519 module is loaded
         try:
@@ -72,8 +81,8 @@ def reset_camera():
             if 'imx519' in result.stdout:
                 # Unload the camera driver
                 try:
-                    subprocess.run(['sudo', 'modprobe', '-r', 'imx519'], check=False, timeout=10)
-                    time.sleep(3)  # Wait for driver to unload
+                    subprocess.run(['sudo', 'modprobe', '-r', 'imx519'], check=False, timeout=5)
+                    time.sleep(2)  # Wait for driver to unload
                 except subprocess.TimeoutExpired:
                     logger.warning("Timeout while unloading camera driver")
             else:
@@ -83,8 +92,8 @@ def reset_camera():
         
         # Reload the camera driver
         try:
-            subprocess.run(['sudo', 'modprobe', 'imx519'], check=False, timeout=10)
-            time.sleep(5)  # Wait for driver to initialize
+            subprocess.run(['sudo', 'modprobe', 'imx519'], check=False, timeout=5)
+            time.sleep(3)  # Wait for driver to initialize
         except subprocess.TimeoutExpired:
             logger.warning("Timeout while loading camera driver")
         
@@ -93,7 +102,7 @@ def reset_camera():
             # Quick test capture to verify camera is working
             test_path = "/tmp/test_capture.jpg"
             
-            # Use simpler test command with better exposure settings
+            # Use minimal test command to avoid timeouts
             test_command = [
                 "libcamera-still",
                 "--nopreview",
@@ -102,10 +111,7 @@ def reset_camera():
                 "--height", "480",
                 "--timeout", "5000",  # Increased timeout
                 "--immediate",
-                "--gain", "2.0",  # Better gain for exposure
-                "--framerate", "15",  # Lower framerate for stability
-                "--exposure", "normal",  # Normal exposure mode
-                "--ev", "2.0"  # Brighter exposure value
+                "--gain", "1.0"  # Conservative gain
             ]
             
             logger.debug(f"Running camera test command: {' '.join(test_command)}")
@@ -168,28 +174,21 @@ def capture_image(max_retries=3):
             retry_count = 0
             while retry_count < max_retries:
                 try:
-                    # Prepare command options with better exposure settings for Arducam
+                    # Prepare simplified command for Arducam to avoid timeouts
                     command = [
                         "libcamera-still",
                         "--nopreview",
                         "-o", image_path,
                         "--width", width,
                         "--height", height,
-                        "--gain", str(gain),
                         "--timeout", str(timeout),
-                        "--immediate"  # Add immediate flag for faster capture
+                        "--immediate"
                     ]
                     
-                    # For Arducam, always use fixed lens position for stability
-                    command.extend(["--lens", str(lens_position)])
-                    
-                    # Add exposure and stability options for Arducam
+                    # Add only essential parameters to avoid overwhelming the camera
                     command.extend([
-                        "--framerate", "15",  # Lower framerate for stability
-                        "--awb", "auto",      # Auto white balance
-                        "--metering", "centre",  # Centre-weighted metering
-                        "--exposure", exposure,  # Normal exposure mode
-                        "--ev", str(ev)  # Exposure value
+                        "--gain", str(gain),
+                        "--lens", str(lens_position)
                     ])
                     
                     logger.debug(f"Running camera command: {' '.join(command)}")
@@ -211,22 +210,17 @@ def capture_image(max_retries=3):
                         if retry_count == 1:
                             logger.info("Attempting capture with lower resolution...")
                             try:
-                                # Try with 1280x960 resolution
+                                # Try with 1280x960 resolution (simplified)
                                 command_lower = [
                                     "libcamera-still",
                                     "--nopreview",
                                     "-o", image_path,
                                     "--width", "1280",
                                     "--height", "960",
-                                    "--gain", str(gain),
                                     "--timeout", str(timeout),
                                     "--immediate",
-                                    "--lens", str(lens_position),
-                                    "--framerate", "15",
-                                    "--awb", "auto",
-                                    "--metering", "centre",
-                                    "--exposure", exposure,
-                                    "--ev", str(ev)
+                                    "--gain", str(gain),
+                                    "--lens", str(lens_position)
                                 ]
                                 
                                 logger.debug(f"Running lower resolution command: {' '.join(command_lower)}")
@@ -262,9 +256,7 @@ def capture_image(max_retries=3):
                                 "--height", "480",
                                 "--timeout", "8000",
                                 "--immediate",
-                                "--gain", "2.0",
-                                "--exposure", "normal",
-                                "--ev", "2.0"
+                                "--gain", "1.0"
                             ]
                             
                             logger.debug(f"Running minimal command: {' '.join(command_minimal)}")
