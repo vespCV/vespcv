@@ -133,6 +133,7 @@ class vespcvGUI(tk.Tk):
         style.configure('Red.TButton', background='red', foreground='black')
         style.configure('Orange.TButton', background='orange', foreground='black')
         style.configure('Green.TButton', background='green', foreground='black')
+        style.configure('Green.TButton.disabled', background='lightgray', foreground='black')  # Example for disabled state
         style.configure('LED.TButton', background='gray', foreground='black')
         style.configure('Blue.TButton', background='blue', foreground='white')  # Add blue style
         style.configure('Yellow.TButton', background='yellow', foreground='black')
@@ -373,23 +374,46 @@ class vespcvGUI(tk.Tk):
     def start_detection(self):
         """Start the detection process."""
         if not self.is_detecting:
-            self.is_detecting = True
-            self.detector.start()
-            self.logger.info("Detection started")
+            try:
+                self.is_detecting = True
+                self.detector.start()
+                self.logger.info("Detection started")
+                
+                # Update button states in the main thread
+                self.after(0, lambda: self.start_button.configure(style='Green.TButton.disabled', state='disabled'))
+                self.after(0, lambda: self.stop_button.configure(state='normal'))
+            except Exception as e:
+                self.logger.error(f"Error starting detection: {str(e)}")
+                self.is_detecting = False
+                self.after(0, lambda: self.start_button.configure(style='Green.TButton', state='normal'))
+                self.after(0, lambda: self.stop_button.configure(state='disabled'))
 
     def stop_detection(self):
         """Stop the detection process."""
         if self.is_detecting:
-            self.is_detecting = False
-            self.detector.stop()
-            # Add a small delay to allow camera operations to complete
-            time.sleep(0.5)
-            self.logger.info("Detection stopped")
+            try:
+                self.is_detecting = False
+                self.detector.stop()
+                # Add a small delay to allow camera operations to complete
+                time.sleep(0.5)
+                self.logger.info("Detection stopped")
+                
+                # Update button states in the main thread
+                self.after(0, lambda: self.start_button.configure(style='Green.TButton', state='normal'))
+                self.after(0, lambda: self.stop_button.configure(state='disabled'))
+            except Exception as e:
+                self.logger.error(f"Error stopping detection: {str(e)}")
+                self.is_detecting = True
+                self.after(0, lambda: self.start_button.configure(style='Green.TButton', state='normal'))
+                self.after(0, lambda: self.stop_button.configure(state='disabled'))
 
     def handle_detection_result(self, result):
         """Handle detection results from the detector."""
-        # Use self.after() to update GUI elements safely
-        self.after(0, self.update_gui_with_result, result)
+        try:
+            # Use self.after() to update GUI elements safely from the main thread
+            self.after(0, lambda: self.update_gui_with_result(result))
+        except Exception as e:
+            self.logger.error(f"Error handling detection result: {str(e)}")
 
     def update_gui_with_result(self, result):
         """Update the GUI with the latest detection result."""
@@ -816,11 +840,14 @@ class vespcvGUI(tk.Tk):
             if hasattr(self, 'detector'):
                 self.detector.shutdown()
             
+            # Log shutdown
+            self.logger.info("Application shutdown complete")
+            
             # Destroy the window
             self.destroy()
             
         except Exception as e:
-            self.logger.error(f"Error during application shutdown: {e}")
+            self.logger.error(f"Error during application shutdown: {str(e)}")
             # Force destroy the window even if there's an error
             self.destroy()
 
