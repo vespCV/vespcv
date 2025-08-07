@@ -66,16 +66,24 @@ def reset_camera():
         except subprocess.TimeoutExpired:
             logger.warning("Timeout while killing libcamera processes")
         
-        # Unload the camera driver
+        # Check if imx519 module is loaded
         try:
-            subprocess.run(['sudo', 'modprobe', '-r', 'arducam_imx519'], check=False, timeout=10)
-            time.sleep(3)  # Wait for driver to unload
-        except subprocess.TimeoutExpired:
-            logger.warning("Timeout while unloading camera driver")
+            result = subprocess.run(['lsmod'], capture_output=True, text=True, check=True)
+            if 'imx519' in result.stdout:
+                # Unload the camera driver
+                try:
+                    subprocess.run(['sudo', 'modprobe', '-r', 'imx519'], check=False, timeout=10)
+                    time.sleep(3)  # Wait for driver to unload
+                except subprocess.TimeoutExpired:
+                    logger.warning("Timeout while unloading camera driver")
+            else:
+                logger.info("imx519 module not loaded, skipping unload")
+        except Exception as e:
+            logger.warning(f"Could not check module status: {e}")
         
         # Reload the camera driver
         try:
-            subprocess.run(['sudo', 'modprobe', 'arducam_imx519'], check=False, timeout=10)
+            subprocess.run(['sudo', 'modprobe', 'imx519'], check=False, timeout=10)
             time.sleep(5)  # Wait for driver to initialize
         except subprocess.TimeoutExpired:
             logger.warning("Timeout while loading camera driver")
@@ -85,19 +93,21 @@ def reset_camera():
             # Quick test capture to verify camera is working
             test_path = "/tmp/test_capture.jpg"
             
-            # Use simpler test command
+            # Use simpler test command with more conservative settings
             test_command = [
                 "libcamera-still",
                 "--nopreview",
                 "-o", test_path,
                 "--width", "640",  # Lower resolution for faster test
                 "--height", "480",
-                "--timeout", "3000",
-                "--immediate"
+                "--timeout", "5000",  # Increased timeout
+                "--immediate",
+                "--gain", "1.0",  # Add gain setting
+                "--framerate", "15"  # Lower framerate for stability
             ]
             
             logger.debug(f"Running camera test command: {' '.join(test_command)}")
-            subprocess.run(test_command, check=True, timeout=8)
+            subprocess.run(test_command, check=True, timeout=10)  # Increased timeout
             
             # Clean up test image
             if os.path.exists(test_path):
@@ -154,7 +164,7 @@ def capture_image(max_retries=3):
             retry_count = 0
             while retry_count < max_retries:
                 try:
-                    # Prepare command options with more conservative settings
+                    # Prepare command options with more conservative settings for Arducam
                     command = [
                         "libcamera-still",
                         "--nopreview",
@@ -166,14 +176,10 @@ def capture_image(max_retries=3):
                         "--immediate"  # Add immediate flag for faster capture
                     ]
                     
-                    # Add autofocus options only if explicitly enabled
-                    if autofocus_enabled and autofocus_mode:
-                        command.extend(["--autofocus-mode", "continuous"])
-                    else:
-                        # Use fixed lens position for stability
-                        command.extend(["--lens", str(lens_position)])
+                    # For Arducam, always use fixed lens position for stability
+                    command.extend(["--lens", str(lens_position)])
                     
-                    # Add additional stability options
+                    # Add additional stability options for Arducam
                     command.extend([
                         "--framerate", "15",  # Lower framerate for stability
                         "--awb", "auto",      # Auto white balance
@@ -195,6 +201,40 @@ def capture_image(max_retries=3):
                     logger.warning(f"Capture attempt {retry_count} failed: {e}")
                     
                     if retry_count < max_retries:
+                        # Try with lower resolution first before resetting
+                        if retry_count == 1:
+                            logger.info("Attempting capture with lower resolution...")
+                            try:
+                                # Try with 1280x960 resolution
+                                command_lower = [
+                                    "libcamera-still",
+                                    "--nopreview",
+                                    "-o", image_path,
+                                    "--width", "1280",
+                                    "--height", "960",
+                                    "--gain", str(gain),
+                                    "--timeout", str(timeout),
+                                    "--immediate",
+                                    "--lens", str(lens_position),
+                                    "--framerate", "15",
+                                    "--awb", "auto",
+                                    "--metering", "centre"
+                                ]
+                                
+                                logger.debug(f"Running lower resolution command: {' '.join(command_lower)}")
+                                subprocess.run(command_lower, check=True, timeout=timeout/1000 + 5)
+                                
+                                # Verify the image was created and is valid
+                                if os.path.exists(image_path) and os.path.getsize(image_path) > 1000:
+                                    logger.debug(f"Lower resolution image captured successfully: {image_path}")
+                                    return image_path
+                                else:
+                                    raise subprocess.SubprocessError("Lower resolution image file not created or too small")
+                                    
+                            except (subprocess.SubprocessError, subprocess.TimeoutExpired) as e2:
+                                logger.warning(f"Lower resolution capture also failed: {e2}")
+                        
+                        # If lower resolution failed or this is not the first retry, reset camera
                         logger.info("Attempting to reset camera...")
                         if reset_camera():
                             time.sleep(5)  # Increased wait time after reset
@@ -203,8 +243,33 @@ def capture_image(max_retries=3):
                             logger.error("Failed to reset camera")
                             break
                     else:
-                        logger.error(f"Failed to capture image after {max_retries} attempts")
-                        raise
+                        # Final attempt: try with even lower resolution and different settings
+                        logger.warning("Final attempt with minimal settings...")
+                        try:
+                            command_minimal = [
+                                "libcamera-still",
+                                "--nopreview",
+                                "-o", image_path,
+                                "--width", "640",
+                                "--height", "480",
+                                "--timeout", "8000",
+                                "--immediate",
+                                "--gain", "1.0"
+                            ]
+                            
+                            logger.debug(f"Running minimal command: {' '.join(command_minimal)}")
+                            subprocess.run(command_minimal, check=True, timeout=12)
+                            
+                            # Verify the image was created and is valid
+                            if os.path.exists(image_path) and os.path.getsize(image_path) > 1000:
+                                logger.debug(f"Minimal settings image captured successfully: {image_path}")
+                                return image_path
+                            else:
+                                raise subprocess.SubprocessError("Minimal settings image file not created or too small")
+                                
+                        except (subprocess.SubprocessError, subprocess.TimeoutExpired) as e3:
+                            logger.error(f"All capture attempts failed. Final error: {e3}")
+                            raise
         else:  # camera_type == 'pi' or unknown
             # Standard single-attempt logic for Pi Camera Module 3
             command = [
